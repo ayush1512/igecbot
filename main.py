@@ -14,7 +14,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text('How can I help you!')
 
 async def custom_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text('This is a custom command.')
+    await update.message.reply_text('BHAG ** kuch nhi ho rha')
 
 # Responses
 
@@ -22,7 +22,7 @@ def handle_response(text: str) -> str:
     processed = str = text.lower()
     
     if 'hello' or 'hi' in processed:
-        return 'Hi there'
+        return 'bhag tori bahin ke chodo utar jaldi wahan se'    
     
     if 'how are you' in processed:
         return 'I am fine wbu'
@@ -31,7 +31,7 @@ def handle_response(text: str) -> str:
         return 'awww..... i love you too!'
 
     if 'jaldi wahan se hato' in processed:
-        return 'bhag tori bahin ke chodo utar jaldi wahan se'    
+        return 'Hi there'
     
     return "I don't understand what you said"
 
