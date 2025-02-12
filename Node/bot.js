@@ -175,7 +175,8 @@ bot.action(/listBranch:(.+)/, async (ctx) => {
                     [{ text: '📚 Books', callback_data: 'listCategory:books' }],
                     [{ text: '📝 Notes', callback_data: 'listCategory:notes' }],
                     [{ text: '📄 Question Papers', callback_data: 'listCategory:qp' }],
-                    [{ text: '📑 Shivani QB', callback_data: 'listCategory:qb' }]
+                    [{ text: '📑 Shivani QB', callback_data: 'listCategory:qb' }],
+                    [{ text: '📂 All Files', callback_data: 'listCategory:all' }]
                 ]
             }
         });
@@ -203,23 +204,32 @@ bot.action(/listCategory:(.+)/, async (ctx) => {
             return ctx.reply('⌛ Session expired. Please start over with /get command 🔄');
         }
 
-        // Remove uploadedBy filter to show files from all users
-        const files = await File.find({
+        // Build query based on whether we want all files or specific category
+        const query = {
             yearSem: yearSem,
-            branch: branch,
-            fileCatgry: fileCatgry
-        });
+            branch: branch
+        };
+
+        if (fileCatgry !== 'all') {
+            query.fileCatgry = fileCatgry;
+        }
+
+        const files = await File.find(query);
 
         if (files.length === 0) {
-            return ctx.reply(`❌ No files found in ${fileCatgry} for Year ${yearSem} - ${branch.toUpperCase()} 📂`);
+            const category = fileCatgry === 'all' ? 'any category' : fileCatgry;
+            return ctx.reply(`❌ No files found in ${category} for Year ${yearSem} - ${branch.toUpperCase()} 📂`);
         }
 
         const keyboard = files.map((file) => [{
-            text: `📁 ${file.fileName}`,
+            text: fileCatgry === 'all' ? 
+                `📁 ${file.fileName} (${file.fileCatgry})` : 
+                `📁 ${file.fileName}`,
             callback_data: `fileOptions:${file._id}`
         }]);
 
-        await ctx.reply(`📂 Files in ${fileCatgry} (Year ${yearSem} - ${branch.toUpperCase()}):`, {
+        const categoryDisplay = fileCatgry === 'all' ? 'All Files' : fileCatgry;
+        await ctx.reply(`📂 ${categoryDisplay} (Year ${yearSem} - ${branch.toUpperCase()}):`, {
             reply_markup: {
                 inline_keyboard: keyboard
             }
