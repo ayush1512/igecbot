@@ -243,129 +243,46 @@ bot.action(/fileOptions:(.+)/, async (ctx) => {
         const file = await File.findById(fileId);
         
         if (!file) {
-            return ctx.reply('File not found.');
+            return ctx.reply('❌ File not found');
         }
 
-        await ctx.reply(`File: ${file.fileName}\nYear: ${file.yearSem}\nBranch: ${file.branch.toUpperCase()}\nCategory: ${file.fileCatgry}`, {
+        await ctx.reply(`📁 File: ${file.fileName}`, {
             reply_markup: {
                 inline_keyboard: [
                     [{ text: '📥 Download', callback_data: `file:${fileId}` }],
-                    [{ text: '📅 Change Year', callback_data: `changeYear:${fileId}` }],
-                    [{ text: '🏛 Change Branch', callback_data: `changeBranch:${fileId}` }],
-                    [{ text: '📚 Change Category', callback_data: `changeCategory:${fileId}` }],
-                    [{ text: '🔙 Back to Files', callback_data: `listCategory:${file.fileCatgry}` }]
+                    [{ text: '🔙 Back to Menu', callback_data: 'backToMenu' }]
                 ]
             }
         });
         await ctx.answerCbQuery();
     } catch (error) {
         console.error('Error showing file options:', error);
-        ctx.reply('Sorry, there was an error processing your request.');
+        ctx.reply('❌ Sorry, there was an error processing your request');
     }
 });
 
-// Handle year/semester change
-bot.action(/changeYear:(.+)/, async (ctx) => {
-    const fileId = ctx.match[1];
-    await ctx.reply('Select new Year:', {
-        reply_markup: {
-            inline_keyboard: [
-                [{ text: '📅 Year 1', callback_data: `updateYear:${fileId}:1` }],
-                [{ text: '📅 Year 2', callback_data: `updateYear:${fileId}:2` }],
-                [{ text: '📅 Year 3', callback_data: `updateYear:${fileId}:3` }],
-                [{ text: '📅 Year 4', callback_data: `updateYear:${fileId}:4` }]
-            ]
-        }
-    });
-    await ctx.answerCbQuery();
-});
-
-// Add branch change handler
-bot.action(/changeBranch:(.+)/, async (ctx) => {
-    const fileId = ctx.match[1];
-    const file = await File.findById(fileId);
-    
-    // Different branch options based on file's year
-    const branchKeyboard = file.yearSem === '1' ? {
-        inline_keyboard: [
-            [{ text: '💻 IT', callback_data: `updateBranch:${fileId}:it` }],
-            [{ text: '📡 EC', callback_data: `updateBranch:${fileId}:ec` }],
-            [{ text: '⚡ EE', callback_data: `updateBranch:${fileId}:ee` }],
-            [{ text: '🔧 ME', callback_data: `updateBranch:${fileId}:me` }],
-            [{ text: '🏗️ CE', callback_data: `updateBranch:${fileId}:ce` }],
-            [{ text: '📐 Mathematics', callback_data: `updateBranch:${fileId}:maths` }],
-            [{ text: '🧪 Chemistry', callback_data: `updateBranch:${fileId}:chem` }],
-            [{ text: '🔬 Physics', callback_data: `updateBranch:${fileId}:phy` }],
-            [{ text: '📖 English', callback_data: `updateBranch:${fileId}:eng` }]
-        ]
-    } : {
-        inline_keyboard: [
-            [{ text: '💻 IT', callback_data: `updateBranch:${fileId}:it` }],
-            [{ text: '📡 EC', callback_data: `updateBranch:${fileId}:ec` }],
-            [{ text: '⚡ EE', callback_data: `updateBranch:${fileId}:ee` }],
-            [{ text: '🔧 ME', callback_data: `updateBranch:${fileId}:me` }],
-            [{ text: '🏗️ CE', callback_data: `updateBranch:${fileId}:ce` }]
-        ]
-    };
-
-    await ctx.reply('Select new Branch:', {
-        reply_markup: branchKeyboard
-    });
-    await ctx.answerCbQuery();
-});
-
-// Handle category change
-bot.action(/changeCategory:(.+)/, async (ctx) => {
-    const fileId = ctx.match[1];
-    await ctx.reply('Select new Category:', {
-        reply_markup: {
-            inline_keyboard: [
-                [{ text: '📚 Books', callback_data: `updateCategory:${fileId}:books` }],
-                [{ text: '📝 Notes', callback_data: `updateCategory:${fileId}:notes` }],
-                [{ text: '📄 Question Papers', callback_data: `updateCategory:${fileId}:qp` }],
-                [{ text: '📑 Shivani QB', callback_data: `updateCategory:${fileId}:qb` }]
-            ]
-        }
-    });
-    await ctx.answerCbQuery();
-});
-
-// Handle year update
-bot.action(/updateYear:(.+):(.+)/, async (ctx) => {
+// Add back to menu handler
+bot.action('backToMenu', async (ctx) => {
     try {
-        const [_, fileId, yearSem] = ctx.match;
-        await File.findByIdAndUpdate(fileId, { yearSem });
-        ctx.reply('✅ Year updated successfully!\n🔙 Click Back to Files to see your files');
+        // Delete the last two messages
+        const messageId = ctx.callbackQuery.message.message_id;
+        await ctx.telegram.deleteMessage(ctx.chat.id, messageId);
+        await ctx.telegram.deleteMessage(ctx.chat.id, messageId - 1);
+
+        await ctx.reply('Select Year:', {
+            reply_markup: {
+                inline_keyboard: [
+                    [{ text: '📅 Year 1', callback_data: 'listYearSem:1' }],
+                    [{ text: '📅 Year 2', callback_data: 'listYearSem:2' }],
+                    [{ text: '📅 Year 3', callback_data: 'listYearSem:3' }],
+                    [{ text: '📅 Year 4', callback_data: 'listYearSem:4' }]
+                ]
+            }
+        });
         await ctx.answerCbQuery();
     } catch (error) {
-        console.error('Error updating year:', error);
-        ctx.reply('❌ Sorry, there was an error updating the year');
-    }
-});
-
-// Add branch update handler
-bot.action(/updateBranch:(.+):(.+)/, async (ctx) => {
-    try {
-        const [_, fileId, branch] = ctx.match;
-        await File.findByIdAndUpdate(fileId, { branch });
-        ctx.reply('✅ Branch updated successfully!\n🔙 Click Back to Files to see your files');
-        await ctx.answerCbQuery();
-    } catch (error) {
-        console.error('Error updating branch:', error);
-        ctx.reply('❌ Sorry, there was an error updating the branch');
-    }
-});
-
-// Handle category update
-bot.action(/updateCategory:(.+):(.+)/, async (ctx) => {
-    try {
-        const [_, fileId, fileCatgry] = ctx.match;
-        await File.findByIdAndUpdate(fileId, { fileCatgry });
-        ctx.reply('✅ Category updated successfully!\n🔙 Click Back to Files to see your files');
-        await ctx.answerCbQuery();
-    } catch (error) {
-        console.error('Error updating category:', error);
-        ctx.reply('❌ Sorry, there was an error updating the category');
+        console.error('Error returning to menu:', error);
+        ctx.reply('❌ Please use /get command to start over');
     }
 });
 
