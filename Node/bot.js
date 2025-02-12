@@ -66,44 +66,44 @@ connectDB();
 
 // Start command
 bot.command('start', (ctx) => {
-    ctx.reply('Welcome! Use /upload to send me any file to store it. Use /get to see your stored files.');
+    ctx.reply('Welcome! use /get to find the stored files.');
 });
 
 // Handle upload command
-bot.command('upload', (ctx) => {
-    ctx.session = {
-        uploading: true
-    };
-    ctx.reply('Please send me the file you want to upload.');
-});
+// bot.command('upload', (ctx) => {
+//     ctx.session = {
+//         uploading: true
+//     };
+//     ctx.reply('Please send me the file you want to upload.');
+// });
 
-// Handle file uploads
-bot.on(['document', 'photo', 'video', 'audio'], async (ctx) => {
-    try {
-        const file = ctx.message.document || ctx.message.photo?.[0] || ctx.message.video || ctx.message.audio;
-        const fileName = ctx.message.document?.file_name || 'untitled';
+// // Handle file uploads
+// bot.on(['document', 'photo', 'video', 'audio'], async (ctx) => {
+//     try {
+//         const file = ctx.message.document || ctx.message.photo?.[0] || ctx.message.video || ctx.message.audio;
+//         const fileName = ctx.message.document?.file_name || 'untitled';
 
-        // Save file with default categories
-        const newFile = new File({
-            fileId: file.file_id,
-            fileName: fileName,
-            fileType: getFileType(ctx.message),
-            uploadedBy: {
-                userId: ctx.from.id,
-                username: ctx.from.username
-            },
-            yearSem: '4',
-            branch: 'it',
-            fileCatgry: 'qp'
-        });
+//         // Save file with default categories
+//         const newFile = new File({
+//             fileId: file.file_id,
+//             fileName: fileName,
+//             fileType: getFileType(ctx.message),
+//             uploadedBy: {
+//                 userId: ctx.from.id,
+//                 username: ctx.from.username
+//             },
+//             yearSem: '4',
+//             branch: 'it',
+//             fileCatgry: 'qp'
+//         });
 
-        await newFile.save();
-        ctx.reply('File saved successfully! Use /get to access and categorize your files.');
-    } catch (error) {
-        console.error('Error handling file upload:', error);
-        ctx.reply('Sorry, there was an error handling your file upload.');
-    }
-});
+//         await newFile.save();
+//         ctx.reply('File saved successfully! Use /get to access and categorize your files.');
+//     } catch (error) {
+//         console.error('Error handling file upload:', error);
+//         ctx.reply('Sorry, there was an error handling your file upload.');
+//     }
+// });
 
 // List user's files - start with year selection
 bot.command('get', async (ctx) => {
