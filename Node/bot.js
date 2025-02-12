@@ -66,44 +66,44 @@ connectDB();
 
 // Start command
 bot.command('start', (ctx) => {
-    ctx.reply('Welcome! use /get to find the stored files.');
+    ctx.reply('🎉 Welcome!\n📂 Use /get to find files you need 🔍');
 });
 
 // Handle upload command
-// bot.command('upload', (ctx) => {
-//     ctx.session = {
-//         uploading: true
-//     };
-//     ctx.reply('Please send me the file you want to upload.');
-// });
+bot.command('upload', (ctx) => {
+    ctx.session = {
+        uploading: true
+    };
+    ctx.reply('Please send me the file you want to upload.');
+});
 
-// // Handle file uploads
-// bot.on(['document', 'photo', 'video', 'audio'], async (ctx) => {
-//     try {
-//         const file = ctx.message.document || ctx.message.photo?.[0] || ctx.message.video || ctx.message.audio;
-//         const fileName = ctx.message.document?.file_name || 'untitled';
+// Handle file uploads
+bot.on(['document', 'photo', 'video', 'audio'], async (ctx) => {
+    try {
+        const file = ctx.message.document || ctx.message.photo?.[0] || ctx.message.video || ctx.message.audio;
+        const fileName = ctx.message.document?.file_name || 'untitled';
 
-//         // Save file with default categories
-//         const newFile = new File({
-//             fileId: file.file_id,
-//             fileName: fileName,
-//             fileType: getFileType(ctx.message),
-//             uploadedBy: {
-//                 userId: ctx.from.id,
-//                 username: ctx.from.username
-//             },
-//             yearSem: '4',
-//             branch: 'it',
-//             fileCatgry: 'qp'
-//         });
+        // Save file with default categories
+        const newFile = new File({
+            fileId: file.file_id,
+            fileName: fileName,
+            fileType: getFileType(ctx.message),
+            uploadedBy: {
+                userId: ctx.from.id,
+                username: ctx.from.username
+            },
+            yearSem: '4',
+            branch: 'it',
+            fileCatgry: 'qb'
+        });
 
-//         await newFile.save();
-//         ctx.reply('File saved successfully! Use /get to access and categorize your files.');
-//     } catch (error) {
-//         console.error('Error handling file upload:', error);
-//         ctx.reply('Sorry, there was an error handling your file upload.');
-//     }
-// });
+        await newFile.save();
+        ctx.reply('File saved successfully! Use /get to access and categorize your files.');
+    } catch (error) {
+        console.error('Error handling file upload:', error);
+        ctx.reply('Sorry, there was an error handling your file upload.');
+    }
+});
 
 // List user's files - start with year selection
 bot.command('get', async (ctx) => {
@@ -205,7 +205,7 @@ bot.action(/listCategory:(.+)/, async (ctx) => {
 
         // Validate required session data
         if (!yearSem || !branch) {
-            return ctx.reply('Session expired. Please start over with /get command.');
+            return ctx.reply('⌛ Session expired. Please start over with /get command 🔄');
         }
 
         // Remove uploadedBy filter to show files from all users
@@ -216,7 +216,7 @@ bot.action(/listCategory:(.+)/, async (ctx) => {
         });
 
         if (files.length === 0) {
-            return ctx.reply(`No files found in ${fileCatgry} for Year ${yearSem} - ${branch.toUpperCase()}`);
+            return ctx.reply(`❌ No files found in ${fileCatgry} for Year ${yearSem} - ${branch.toUpperCase()} 📂`);
         }
 
         const keyboard = files.map((file) => [{
@@ -224,7 +224,7 @@ bot.action(/listCategory:(.+)/, async (ctx) => {
             callback_data: `fileOptions:${file._id}`
         }]);
 
-        await ctx.reply(`Files in ${fileCatgry} (Year ${yearSem} - ${branch.toUpperCase()}):`, {
+        await ctx.reply(`📂 Files in ${fileCatgry} (Year ${yearSem} - ${branch.toUpperCase()}):`, {
             reply_markup: {
                 inline_keyboard: keyboard
             }
@@ -232,7 +232,7 @@ bot.action(/listCategory:(.+)/, async (ctx) => {
         await ctx.answerCbQuery();
     } catch (error) {
         console.error('Error fetching files:', error);
-        ctx.reply('Sorry, there was an error fetching your files. Please try again with /get command.');
+        ctx.reply('❌ Sorry, there was an error fetching your files.\n🔄 Please try again with /get command');
     }
 });
 
@@ -335,11 +335,11 @@ bot.action(/updateYear:(.+):(.+)/, async (ctx) => {
     try {
         const [_, fileId, yearSem] = ctx.match;
         await File.findByIdAndUpdate(fileId, { yearSem });
-        ctx.reply('Year updated successfully! Use /get to see your files.');
+        ctx.reply('✅ Year updated successfully!\n🔙 Click Back to Files to see your files');
         await ctx.answerCbQuery();
     } catch (error) {
         console.error('Error updating year:', error);
-        ctx.reply('Sorry, there was an error updating the year.');
+        ctx.reply('❌ Sorry, there was an error updating the year');
     }
 });
 
@@ -348,11 +348,11 @@ bot.action(/updateBranch:(.+):(.+)/, async (ctx) => {
     try {
         const [_, fileId, branch] = ctx.match;
         await File.findByIdAndUpdate(fileId, { branch });
-        ctx.reply('Branch updated successfully! Use /get to see your files.');
+        ctx.reply('✅ Branch updated successfully!\n🔙 Click Back to Files to see your files');
         await ctx.answerCbQuery();
     } catch (error) {
         console.error('Error updating branch:', error);
-        ctx.reply('Sorry, there was an error updating the branch.');
+        ctx.reply('❌ Sorry, there was an error updating the branch');
     }
 });
 
@@ -361,11 +361,11 @@ bot.action(/updateCategory:(.+):(.+)/, async (ctx) => {
     try {
         const [_, fileId, fileCatgry] = ctx.match;
         await File.findByIdAndUpdate(fileId, { fileCatgry });
-        ctx.reply('Category updated successfully! Use /get to see your files.');
+        ctx.reply('✅ Category updated successfully!\n🔙 Click Back to Files to see your files');
         await ctx.answerCbQuery();
     } catch (error) {
         console.error('Error updating category:', error);
-        ctx.reply('Sorry, there was an error updating the category.');
+        ctx.reply('❌ Sorry, there was an error updating the category');
     }
 });
 
@@ -376,7 +376,7 @@ bot.action(/file:(.+)/, async (ctx) => {
         const file = await File.findById(fileId);
         
         if (!file) {
-            return ctx.reply('File not found.');
+            return ctx.reply('❌ File not found');
         }
 
         // Send the file back to user based on its type
@@ -394,13 +394,22 @@ bot.action(/file:(.+)/, async (ctx) => {
                 await ctx.replyWithAudio(file.fileId);
                 break;
             default:
-                ctx.reply('Unsupported file type.');
+                ctx.reply('❌ Unsupported file type');
         }
 
         await ctx.answerCbQuery();
     } catch (error) {
         console.error('Error sending file:', error);
-        ctx.reply('Sorry, there was an error retrieving the file.');
+        ctx.reply('❌ Sorry, there was an error retrieving the file');
+    }
+});
+
+// Add message handler for text messages
+bot.on('text', (ctx) => {
+    if (ctx.message.text.startsWith('/') && ctx.message.text !== '/get'||'/start') {
+        ctx.reply('❌ Invalid command!\nOnly /get command is available to access files 📂');
+    } else if (!ctx.message.text.startsWith('/')) {
+        ctx.reply('😔 Sorry! I can not chat with you yet.\nPlease use /get command to access files 📂');
     }
 });
 
@@ -416,7 +425,7 @@ function getFileType(message) {
 // Error handling
 bot.catch((err, ctx) => {
     console.error('Bot error:', err);
-    ctx.reply('An error occurred while processing your request.');
+    ctx.reply('❌ An error occurred while processing your request');
 });
 
 // Graceful shutdown
