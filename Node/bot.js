@@ -264,14 +264,33 @@ bot.action(/changeYear:(.+)/, async (ctx) => {
 // Add branch change handler
 bot.action(/changeBranch:(.+)/, async (ctx) => {
     const fileId = ctx.match[1];
+    const file = await File.findById(fileId);
+    
+    // Different branch options based on file's year
+    const branchKeyboard = file.yearSem === '1' ? {
+        inline_keyboard: [
+            [{ text: '💻 IT', callback_data: `updateBranch:${fileId}:it` }],
+            [{ text: '📡 EC', callback_data: `updateBranch:${fileId}:ec` }],
+            [{ text: '⚡ EE', callback_data: `updateBranch:${fileId}:ee` }],
+            [{ text: '🔧 ME', callback_data: `updateBranch:${fileId}:me` }],
+            [{ text: '🏗️ CE', callback_data: `updateBranch:${fileId}:ce` }],
+            [{ text: '📐 Mathematics', callback_data: `updateBranch:${fileId}:maths` }],
+            [{ text: '🧪 Chemistry', callback_data: `updateBranch:${fileId}:chem` }],
+            [{ text: '🔬 Physics', callback_data: `updateBranch:${fileId}:phy` }],
+            [{ text: '📖 English', callback_data: `updateBranch:${fileId}:eng` }]
+        ]
+    } : {
+        inline_keyboard: [
+            [{ text: '💻 IT', callback_data: `updateBranch:${fileId}:it` }],
+            [{ text: '📡 EC', callback_data: `updateBranch:${fileId}:ec` }],
+            [{ text: '⚡ EE', callback_data: `updateBranch:${fileId}:ee` }],
+            [{ text: '🔧 ME', callback_data: `updateBranch:${fileId}:me` }],
+            [{ text: '🏗️ CE', callback_data: `updateBranch:${fileId}:ce` }]
+        ]
+    };
+
     await ctx.reply('Select new Branch:', {
-        reply_markup: {
-            inline_keyboard: [
-                [{ text: '💻 CSE', callback_data: `updateBranch:${fileId}:cse` }],
-                [{ text: '🔌 ECE', callback_data: `updateBranch:${fileId}:ece` }],
-                [{ text: '⚡ EEE', callback_data: `updateBranch:${fileId}:eee` }]
-            ]
-        }
+        reply_markup: branchKeyboard
     });
     await ctx.answerCbQuery();
 });
