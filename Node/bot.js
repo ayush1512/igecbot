@@ -93,6 +93,7 @@ bot.on(['document', 'photo', 'video', 'audio'], async (ctx) => {
                 username: ctx.from.username
             },
             yearSem: '1',
+            branch: 'it',
             fileCatgry: 'books'
         });
 
@@ -121,26 +122,64 @@ bot.action(/listYearSem:(.+)/, async (ctx) => {
     try {
         const yearSem = ctx.match[1];
         
-        // Initialize session if it doesn't exist
         if (!ctx.session) {
             ctx.session = {};
         }
         
         ctx.session.selectedYearSem = yearSem;
 
+        // Different branch options based on year
+        const branchKeyboard = yearSem === '1' ? {
+            inline_keyboard: [
+                [{ text: '💻 IT', callback_data: 'listBranch:it' }],
+                [{ text: '📡 EC', callback_data: 'listBranch:ec' }],
+                [{ text: '⚡ EE', callback_data: 'listBranch:ee' }],
+                [{ text: '🔧 ME', callback_data: 'listBranch:me' }],
+                [{ text: '🏗️ CE', callback_data: 'listBranch:ce' }],
+                [{ text: '📐 Mathematics', callback_data: 'listBranch:maths' }],
+                [{ text: '🧪 Chemistry', callback_data: 'listBranch:chem' }],
+                [{ text: '🔬 Physics', callback_data: 'listBranch:phy' }],
+                [{ text: '📖 English', callback_data: 'listBranch:eng' }]
+            ]
+        } : {
+            inline_keyboard: [
+                [{ text: '💻 IT', callback_data: 'listBranch:it' }],
+                [{ text: '📡 EC', callback_data: 'listBranch:ec' }],
+                [{ text: '⚡ EE', callback_data: 'listBranch:ee' }],
+                [{ text: '🔧 ME', callback_data: 'listBranch:me' }],
+                [{ text: '🏗️ CE', callback_data: 'listBranch:ce' }]
+            ]
+        };
+
+        await ctx.reply('Select Branch:', {
+            reply_markup: branchKeyboard
+        });
+        await ctx.answerCbQuery();
+    } catch (error) {
+        console.error('Error handling year selection:', error);
+        ctx.reply('Sorry, there was an error processing your request.');
+    }
+});
+
+// Handle branch selection
+bot.action(/listBranch:(.+)/, async (ctx) => {
+    try {
+        const branch = ctx.match[1];
+        ctx.session.selectedBranch = branch;
+
         await ctx.reply('Select Category:', {
             reply_markup: {
                 inline_keyboard: [
-                    [{ text: '📚 Books', callback_data: `listCategory:books` }],
-                    [{ text: '📝 Notes', callback_data: `listCategory:notes` }],
-                    [{ text: '📄 Question Papers', callback_data: `listCategory:question_papers` }],
-                    [{ text: '📑 Shivani QB', callback_data: `listCategory:qb` }]
+                    [{ text: '📚 Books', callback_data: 'listCategory:books' }],
+                    [{ text: '📝 Notes', callback_data: 'listCategory:notes' }],
+                    [{ text: '📄 Question Papers', callback_data: 'listCategory:question_papers' }],
+                    [{ text: '📑 Shivani QB', callback_data: 'listCategory:qb' }]
                 ]
             }
         });
         await ctx.answerCbQuery();
     } catch (error) {
-        console.error('Error handling year selection:', error);
+        console.error('Error handling branch selection:', error);
         ctx.reply('Sorry, there was an error processing your request.');
     }
 });
@@ -150,15 +189,17 @@ bot.action(/listCategory:(.+)/, async (ctx) => {
     try {
         const fileCatgry = ctx.match[1];
         const yearSem = ctx.session.selectedYearSem;
+        const branch = ctx.session.selectedBranch;
 
         const files = await File.find({
             'uploadedBy.userId': ctx.from.id,
             yearSem: yearSem,
+            branch: branch,
             fileCatgry: fileCatgry
         });
 
         if (files.length === 0) {
-            return ctx.reply(`No files found in ${fileCatgry} for Year ${yearSem}`);
+            return ctx.reply(`No files found in ${fileCatgry} for Year ${yearSem} - ${branch.toUpperCase()}`);
         }
 
         const keyboard = files.map((file) => [{
@@ -166,7 +207,7 @@ bot.action(/listCategory:(.+)/, async (ctx) => {
             callback_data: `fileOptions:${file._id}`
         }]);
 
-        await ctx.reply(`Files in ${fileCatgry} (Year ${yearSem}):`, {
+        await ctx.reply(`Files in ${fileCatgry} (Year ${yearSem} - ${branch.toUpperCase()}):`, {
             reply_markup: {
                 inline_keyboard: keyboard
             }
@@ -188,11 +229,12 @@ bot.action(/fileOptions:(.+)/, async (ctx) => {
             return ctx.reply('File not found.');
         }
 
-        await ctx.reply(`File: ${file.fileName}\nCategory: ${file.fileCatgry}\nYear: ${file.yearSem}`, {
+        await ctx.reply(`File: ${file.fileName}\nYear: ${file.yearSem}\nBranch: ${file.branch.toUpperCase()}\nCategory: ${file.fileCatgry}`, {
             reply_markup: {
                 inline_keyboard: [
                     [{ text: '📥 Download', callback_data: `file:${fileId}` }],
                     [{ text: '📅 Change Year', callback_data: `changeYear:${fileId}` }],
+                    [{ text: '🏛 Change Branch', callback_data: `changeBranch:${fileId}` }],
                     [{ text: '📚 Change Category', callback_data: `changeCategory:${fileId}` }],
                     [{ text: '🔙 Back to Files', callback_data: `listCategory:${file.fileCatgry}` }]
                 ]
@@ -213,6 +255,21 @@ bot.action(/changeYear:(.+)/, async (ctx) => {
             inline_keyboard: [
                 [{ text: '📅 Year 1', callback_data: `updateYear:${fileId}:1` }],
                 [{ text: '📅 Year 2', callback_data: `updateYear:${fileId}:2` }]
+            ]
+        }
+    });
+    await ctx.answerCbQuery();
+});
+
+// Add branch change handler
+bot.action(/changeBranch:(.+)/, async (ctx) => {
+    const fileId = ctx.match[1];
+    await ctx.reply('Select new Branch:', {
+        reply_markup: {
+            inline_keyboard: [
+                [{ text: '💻 CSE', callback_data: `updateBranch:${fileId}:cse` }],
+                [{ text: '🔌 ECE', callback_data: `updateBranch:${fileId}:ece` }],
+                [{ text: '⚡ EEE', callback_data: `updateBranch:${fileId}:eee` }]
             ]
         }
     });
@@ -245,6 +302,19 @@ bot.action(/updateYear:(.+):(.+)/, async (ctx) => {
     } catch (error) {
         console.error('Error updating year:', error);
         ctx.reply('Sorry, there was an error updating the year.');
+    }
+});
+
+// Add branch update handler
+bot.action(/updateBranch:(.+):(.+)/, async (ctx) => {
+    try {
+        const [_, fileId, branch] = ctx.match;
+        await File.findByIdAndUpdate(fileId, { branch });
+        ctx.reply('Branch updated successfully! Use /get to see your files.');
+        await ctx.answerCbQuery();
+    } catch (error) {
+        console.error('Error updating branch:', error);
+        ctx.reply('Sorry, there was an error updating the branch.');
     }
 });
 
