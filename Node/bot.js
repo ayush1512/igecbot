@@ -187,12 +187,22 @@ bot.action(/listBranch:(.+)/, async (ctx) => {
 // Handle category selection and show filtered files
 bot.action(/listCategory:(.+)/, async (ctx) => {
     try {
+        // Initialize session if it doesn't exist
+        if (!ctx.session) {
+            ctx.session = {};
+        }
+
         const fileCatgry = ctx.match[1];
         const yearSem = ctx.session.selectedYearSem;
         const branch = ctx.session.selectedBranch;
 
+        // Validate required session data
+        if (!yearSem || !branch) {
+            return ctx.reply('Session expired. Please start over with /get command.');
+        }
+
+        // Remove uploadedBy filter to show files from all users
         const files = await File.find({
-            'uploadedBy.userId': ctx.from.id,
             yearSem: yearSem,
             branch: branch,
             fileCatgry: fileCatgry
@@ -215,7 +225,7 @@ bot.action(/listCategory:(.+)/, async (ctx) => {
         await ctx.answerCbQuery();
     } catch (error) {
         console.error('Error fetching files:', error);
-        ctx.reply('Sorry, there was an error fetching your files.');
+        ctx.reply('Sorry, there was an error fetching your files. Please try again with /get command.');
     }
 });
 
