@@ -259,14 +259,20 @@ bot.action(/fileOptions:(.+)/, async (ctx) => {
 // Add back to menu handler
 bot.action('backToMenu', async (ctx) => {
     try {
-        // Delete the last two messages
+        // Delete the last 5 messages
         const messageId = ctx.callbackQuery.message.message_id;
-        await ctx.telegram.deleteMessage(ctx.chat.id, messageId);
-        await ctx.telegram.deleteMessage(ctx.chat.id, messageId - 1);
+        for (let i = 0; i < 5; i++) {
+            try {
+                await ctx.telegram.deleteMessage(ctx.chat.id, messageId - i);
+            } catch (err) {
+                console.log(`Could not delete message ${messageId - i}:`, err.message);
+            }
+        }
 
+        // Replicate /get command functionality
         await ctx.reply('Select Year:', {
-        reply_markup: {
-            inline_keyboard: [
+            reply_markup: {
+                inline_keyboard: [
                     [{ text: '📅 Year 1', callback_data: 'listYearSem:1' }],
                     [{ text: '📅 Year 2', callback_data: 'listYearSem:2' }],
                     [{ text: '📅 Year 3', callback_data: 'listYearSem:3' }],
@@ -276,7 +282,7 @@ bot.action('backToMenu', async (ctx) => {
         });
         await ctx.answerCbQuery();
     } catch (error) {
-        console.error('Error returning to menu:', error);
+        console.error('Error in backToMenu handler:', error);
         ctx.reply('❌ Please use /get command to start over');
     }
 });
