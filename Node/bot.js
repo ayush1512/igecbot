@@ -66,7 +66,7 @@ connectDB();
 
 // Start command
 bot.command('start', (ctx) => {
-    ctx.reply('Welcome! Use /upload to send me any file to store it. Use /get to see your stored files.');
+    ctx.reply('*Welcome!* Use /upload to send me any file to store it. Use /get to see your stored files.', { parse_mode: 'Markdown' });
 });
 
 // Handle upload command
@@ -74,7 +74,7 @@ bot.command('upload', (ctx) => {
     ctx.session = {
         uploading: true
     };
-    ctx.reply('Please send me the file you want to upload.');
+    ctx.reply('*Please send me the file you want to upload.*', { parse_mode: 'Markdown' });
 });
 
 // Handle file uploads
@@ -98,22 +98,23 @@ bot.on(['document', 'photo', 'video', 'audio'], async (ctx) => {
         });
 
         await newFile.save();
-        ctx.reply('File saved successfully! Use /get to access and categorize your files.');
+        ctx.reply('*File saved successfully!* Use /get to access and categorize your files.', { parse_mode: 'Markdown' });
     } catch (error) {
         console.error('Error handling file upload:', error);
-        ctx.reply('Sorry, there was an error handling your file upload.');
+        ctx.reply('*Sorry, there was an error handling your file upload.*', { parse_mode: 'Markdown' });
     }
 });
 
 // List user's files - start with year selection
 bot.command('get', async (ctx) => {
-    await ctx.reply('Select Year:', {
+    await ctx.reply('*Select Year:*', {
+        parse_mode: 'Markdown',
         reply_markup: {
             inline_keyboard: [
-                [{ text: '📅 Year 1', callback_data: 'listYearSem:1' }],
-                [{ text: '📅 Year 2', callback_data: 'listYearSem:2' }],
-                [{ text: '📅 Year 3', callback_data: 'listYearSem:3' }],
-                [{ text: '📅 Year 4', callback_data: 'listYearSem:4' }]
+                [{ text: '1️⃣', callback_data: 'listYearSem:1' }],
+                [{ text: '2️⃣', callback_data: 'listYearSem:2' }],
+                [{ text: '3️⃣', callback_data: 'listYearSem:3' }],
+                [{ text: '4️⃣', callback_data: 'listYearSem:4' }]
             ]
         }
     });
@@ -153,23 +154,30 @@ bot.action(/listYearSem:(.+)/, async (ctx) => {
             ]
         };
 
-        await ctx.reply('Select Branch:', {
+        await ctx.reply('*Select Branch:*', {
+            parse_mode: 'Markdown',
             reply_markup: branchKeyboard
         });
         await ctx.answerCbQuery();
     } catch (error) {
         console.error('Error handling year selection:', error);
-        ctx.reply('Sorry, there was an error processing your request.');
+        ctx.reply('*Sorry, there was an error processing your request.*', { parse_mode: 'Markdown' });
     }
 });
 
 // Handle branch selection
 bot.action(/listBranch:(.+)/, async (ctx) => {
     try {
+        // Initialize session if it doesn't exist
+        if (!ctx.session) {
+            ctx.session = {};
+        }
+
         const branch = ctx.match[1];
         ctx.session.selectedBranch = branch;
 
-        await ctx.reply('Select Category:', {
+        await ctx.reply('*Select Category:*', {
+            parse_mode: 'Markdown',
             reply_markup: {
                 inline_keyboard: [
                     [{ text: '📚 Books', callback_data: 'listCategory:books' }],
@@ -183,7 +191,7 @@ bot.action(/listBranch:(.+)/, async (ctx) => {
         await ctx.answerCbQuery();
     } catch (error) {
         console.error('Error handling branch selection:', error);
-        ctx.reply('Sorry, there was an error processing your request.');
+        ctx.reply('*Sorry, there was an error processing your request.*', { parse_mode: 'Markdown' });
     }
 });
 
@@ -201,7 +209,7 @@ bot.action(/listCategory:(.+)/, async (ctx) => {
 
         // Validate required session data
         if (!yearSem || !branch) {
-            return ctx.reply('⌛ Session expired. Please start over with /get command 🔄');
+            return ctx.reply('*⌛ Session expired. Please start over with /get command 🔄*', { parse_mode: 'Markdown' });
         }
 
         // Build query based on whether we want all files or specific category
@@ -218,7 +226,7 @@ bot.action(/listCategory:(.+)/, async (ctx) => {
 
         if (files.length === 0) {
             const category = fileCatgry === 'all' ? 'any category' : fileCatgry;
-            return ctx.reply(`❌ No files found in ${category} for Year ${yearSem} - ${branch.toUpperCase()} 📂`);
+            return ctx.reply(`❌ No files found in ${category} for Year ${yearSem} - ${branch.toUpperCase()} 📂`, { parse_mode: 'Markdown' });
         }
 
         const keyboard = files.map((file) => [{
@@ -229,7 +237,8 @@ bot.action(/listCategory:(.+)/, async (ctx) => {
         }]);
 
         const categoryDisplay = fileCatgry === 'all' ? 'All Files' : fileCatgry;
-        await ctx.reply(`📂 ${categoryDisplay} (Year ${yearSem} - ${branch.toUpperCase()}):`, {
+        await ctx.reply(`*📂 ${categoryDisplay} (Year ${yearSem} - ${branch.toUpperCase()}):*`, {
+            parse_mode: 'Markdown',
             reply_markup: {
                 inline_keyboard: keyboard
             }
@@ -237,7 +246,7 @@ bot.action(/listCategory:(.+)/, async (ctx) => {
         await ctx.answerCbQuery();
     } catch (error) {
         console.error('Error fetching files:', error);
-        ctx.reply('❌ Sorry, there was an error fetching your files.\n🔄 Please try again with /get command');
+        ctx.reply('*❌ Sorry, there was an error fetching your files.\n🔄 Please try again with /get command*', { parse_mode: 'Markdown' });
     }
 });
 
@@ -248,10 +257,11 @@ bot.action(/fileOptions:(.+)/, async (ctx) => {
         const file = await File.findById(fileId);
         
         if (!file) {
-            return ctx.reply('❌ File not found');
+            return ctx.reply('*❌ File not found*', { parse_mode: 'Markdown' });
         }
 
-        await ctx.reply(`📁 File: ${file.fileName}`, {
+        await ctx.reply(`*📁 File: ${file.fileName}*`, {
+            parse_mode: 'Markdown',
             reply_markup: {
                 inline_keyboard: [
                     [{ text: '📥 Download', callback_data: `file:${fileId}` }],
@@ -262,7 +272,7 @@ bot.action(/fileOptions:(.+)/, async (ctx) => {
         await ctx.answerCbQuery();
     } catch (error) {
         console.error('Error showing file options:', error);
-        ctx.reply('❌ Sorry, there was an error processing your request');
+        ctx.reply('*❌ Sorry, there was an error processing your request*', { parse_mode: 'Markdown' });
     }
 });
 
@@ -280,20 +290,21 @@ bot.action('backToMenu', async (ctx) => {
         }
 
         // Replicate /get command functionality
-        await ctx.reply('Select Year:', {
+        await ctx.reply('*Select Year:*', {
+            parse_mode: 'Markdown',
             reply_markup: {
                 inline_keyboard: [
-                    [{ text: '📅 Year 1', callback_data: 'listYearSem:1' }],
-                    [{ text: '📅 Year 2', callback_data: 'listYearSem:2' }],
-                    [{ text: '📅 Year 3', callback_data: 'listYearSem:3' }],
-                    [{ text: '📅 Year 4', callback_data: 'listYearSem:4' }]
+                    [{ text: '1️⃣', callback_data: 'listYearSem:1' }],
+                    [{ text: '2️⃣', callback_data: 'listYearSem:2' }],
+                    [{ text: '3️⃣', callback_data: 'listYearSem:3' }],
+                    [{ text: '4️⃣', callback_data: 'listYearSem:4' }]
                 ]
             }
         });
         await ctx.answerCbQuery();
     } catch (error) {
         console.error('Error in backToMenu handler:', error);
-        ctx.reply('❌ Please use /get command to start over');
+        ctx.reply('*❌ Please use /get command to start over*', { parse_mode: 'Markdown' });
     }
 });
 
@@ -304,7 +315,7 @@ bot.action(/file:(.+)/, async (ctx) => {
         const file = await File.findById(fileId);
         
         if (!file) {
-            return ctx.reply('File not found.');
+            return ctx.reply('*File not found.*', { parse_mode: 'Markdown' });
         }
 
         // Send the file back to user based on its type
@@ -322,22 +333,22 @@ bot.action(/file:(.+)/, async (ctx) => {
                 await ctx.replyWithAudio(file.fileId);
                 break;
             default:
-                ctx.reply('Unsupported file type.');
+                ctx.reply('*Unsupported file type.*', { parse_mode: 'Markdown' });
         }
 
         await ctx.answerCbQuery();
     } catch (error) {
         console.error('Error sending file:', error);
-        ctx.reply('❌ Sorry, there was an error retrieving the file');
+        ctx.reply('*❌ Sorry, there was an error retrieving the file*', { parse_mode: 'Markdown' });
     }
 });
 
 // Add message handler for text messages
 bot.on('text', (ctx) => {
     if (ctx.message.text.startsWith('/') && ctx.message.text !== '/get'||'/start') {
-        ctx.reply('❌ Invalid command!\nOnly /get command is available to access files 📂');
+        ctx.reply('*❌ Invalid command!\nOnly /get command is available to access files 📂*', { parse_mode: 'Markdown' });
     } else if (!ctx.message.text.startsWith('/')) {
-        ctx.reply('😔 Sorry! I can not chat with you yet.\nPlease use /get command to access files 📂');
+        ctx.reply('*😔 Sorry! I can not chat with you yet.\nPlease use /get command to access files 📂*', { parse_mode: 'Markdown' });
     }
 });
 
@@ -353,7 +364,7 @@ function getFileType(message) {
 // Error handling
 bot.catch((err, ctx) => {
     console.error('Bot error:', err);
-    ctx.reply('An error occurred while processing your request.');
+    ctx.reply('*An error occurred while processing your request.*', { parse_mode: 'Markdown' });
 });
 
 // Graceful shutdown
