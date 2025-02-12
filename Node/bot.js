@@ -92,9 +92,9 @@ bot.on(['document', 'photo', 'video', 'audio'], async (ctx) => {
                 userId: ctx.from.id,
                 username: ctx.from.username
             },
-            yearSem: '1',
+            yearSem: '4',
             branch: 'it',
-            fileCatgry: 'books'
+            fileCatgry: 'qp'
         });
 
         await newFile.save();
@@ -111,7 +111,9 @@ bot.command('get', async (ctx) => {
         reply_markup: {
             inline_keyboard: [
                 [{ text: '📅 Year 1', callback_data: 'listYearSem:1' }],
-                [{ text: '📅 Year 2', callback_data: 'listYearSem:2' }]
+                [{ text: '📅 Year 2', callback_data: 'listYearSem:2' }],
+                [{ text: '📅 Year 3', callback_data: 'listYearSem:3' }],
+                [{ text: '📅 Year 4', callback_data: 'listYearSem:4' }]
             ]
         }
     });
@@ -164,6 +166,11 @@ bot.action(/listYearSem:(.+)/, async (ctx) => {
 // Handle branch selection
 bot.action(/listBranch:(.+)/, async (ctx) => {
     try {
+        // Initialize session if it doesn't exist
+        if (!ctx.session) {
+            ctx.session = {};
+        }
+
         const branch = ctx.match[1];
         ctx.session.selectedBranch = branch;
 
@@ -172,7 +179,7 @@ bot.action(/listBranch:(.+)/, async (ctx) => {
                 inline_keyboard: [
                     [{ text: '📚 Books', callback_data: 'listCategory:books' }],
                     [{ text: '📝 Notes', callback_data: 'listCategory:notes' }],
-                    [{ text: '📄 Question Papers', callback_data: 'listCategory:question_papers' }],
+                    [{ text: '📄 Question Papers', callback_data: 'listCategory:qp' }],
                     [{ text: '📑 Shivani QB', callback_data: 'listCategory:qb' }]
                 ]
             }
@@ -264,7 +271,9 @@ bot.action(/changeYear:(.+)/, async (ctx) => {
         reply_markup: {
             inline_keyboard: [
                 [{ text: '📅 Year 1', callback_data: `updateYear:${fileId}:1` }],
-                [{ text: '📅 Year 2', callback_data: `updateYear:${fileId}:2` }]
+                [{ text: '📅 Year 2', callback_data: `updateYear:${fileId}:2` }],
+                [{ text: '📅 Year 3', callback_data: `updateYear:${fileId}:3` }],
+                [{ text: '📅 Year 4', callback_data: `updateYear:${fileId}:4` }]
             ]
         }
     });
@@ -313,7 +322,7 @@ bot.action(/changeCategory:(.+)/, async (ctx) => {
             inline_keyboard: [
                 [{ text: '📚 Books', callback_data: `updateCategory:${fileId}:books` }],
                 [{ text: '📝 Notes', callback_data: `updateCategory:${fileId}:notes` }],
-                [{ text: '📄 Question Papers', callback_data: `updateCategory:${fileId}:question_papers` }],
+                [{ text: '📄 Question Papers', callback_data: `updateCategory:${fileId}:qp` }],
                 [{ text: '📑 Shivani QB', callback_data: `updateCategory:${fileId}:qb` }]
             ]
         }
