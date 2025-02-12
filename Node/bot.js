@@ -66,7 +66,7 @@ connectDB();
 
 // Start command
 bot.command('start', (ctx) => {
-    ctx.reply('🎉 Welcome!\n📂 Use /get to find files you need 🔍');
+    ctx.reply('Welcome! Use /upload to send me any file to store it. Use /get to see your stored files.');
 });
 
 // Handle upload command
@@ -166,11 +166,6 @@ bot.action(/listYearSem:(.+)/, async (ctx) => {
 // Handle branch selection
 bot.action(/listBranch:(.+)/, async (ctx) => {
     try {
-        // Initialize session if it doesn't exist
-        if (!ctx.session) {
-            ctx.session = {};
-        }
-
         const branch = ctx.match[1];
         ctx.session.selectedBranch = branch;
 
@@ -270,8 +265,8 @@ bot.action('backToMenu', async (ctx) => {
         await ctx.telegram.deleteMessage(ctx.chat.id, messageId - 1);
 
         await ctx.reply('Select Year:', {
-            reply_markup: {
-                inline_keyboard: [
+        reply_markup: {
+            inline_keyboard: [
                     [{ text: '📅 Year 1', callback_data: 'listYearSem:1' }],
                     [{ text: '📅 Year 2', callback_data: 'listYearSem:2' }],
                     [{ text: '📅 Year 3', callback_data: 'listYearSem:3' }],
@@ -293,7 +288,7 @@ bot.action(/file:(.+)/, async (ctx) => {
         const file = await File.findById(fileId);
         
         if (!file) {
-            return ctx.reply('❌ File not found');
+            return ctx.reply('File not found.');
         }
 
         // Send the file back to user based on its type
@@ -311,7 +306,7 @@ bot.action(/file:(.+)/, async (ctx) => {
                 await ctx.replyWithAudio(file.fileId);
                 break;
             default:
-                ctx.reply('❌ Unsupported file type');
+                ctx.reply('Unsupported file type.');
         }
 
         await ctx.answerCbQuery();
@@ -342,7 +337,7 @@ function getFileType(message) {
 // Error handling
 bot.catch((err, ctx) => {
     console.error('Bot error:', err);
-    ctx.reply('❌ An error occurred while processing your request');
+    ctx.reply('An error occurred while processing your request.');
 });
 
 // Graceful shutdown
