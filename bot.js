@@ -64,20 +64,23 @@ bot.use(session());
 // Connect to MongoDB
 connectDB();
 
-// Start command
+// Start command - removed upload mention
 bot.command('start', (ctx) => {
-    ctx.reply('*🎉 Welcome!* \n* 📥 Use /get to search the files you need.*', { parse_mode: 'Markdown' });
+    ctx.reply('*🎉 Welcome!* \n*📥 Use /get to search and download files.*', { parse_mode: 'Markdown' });
 });
 
-// Handle upload command
+// Comment out upload command handler
+/*
 bot.command('upload', (ctx) => {
     ctx.session = {
         uploading: true
     };
     ctx.reply('*📤 Please send me the file you want to upload.*', { parse_mode: 'Markdown' });
 });
+*/
 
-// Handle file uploads
+// Comment out file upload handler
+/*
 bot.on(['document', 'photo', 'video', 'audio'], async (ctx) => {
     try {
         const file = ctx.message.document || ctx.message.photo?.[0] || ctx.message.video || ctx.message.audio;
@@ -104,6 +107,7 @@ bot.on(['document', 'photo', 'video', 'audio'], async (ctx) => {
         ctx.reply('*❌ Sorry, there was an error handling your file upload.*', { parse_mode: 'Markdown' });
     }
 });
+*/
 
 // List user's files - start with year selection
 bot.command('get', async (ctx) => {
@@ -381,13 +385,18 @@ bot.action(/file:(.+)/, async (ctx) => {
     }
 });
 
-// Add message handler for text messages
+// Modified text message handler to block uploads
 bot.on('text', (ctx) => {
     if (!ctx.message.text.startsWith('/')) {
-        ctx.reply('*😔 Sorry! I cannot chat with you yet.\n📥 Please use /get command to access files.*', { parse_mode: 'Markdown' });
-    } else if (ctx.message.text.startsWith('/') && ctx.message.text !== '/get'||'/start') {
+        ctx.reply('*😔 Sorry! I cannot accept messages or files.\n📥 Please use /get command to access files.*', { parse_mode: 'Markdown' });
+    } else if (ctx.message.text !== '/get' && ctx.message.text !== '/start') {
         ctx.reply('*❌ Invalid command!\n📥 Only /get command is available to access files.*', { parse_mode: 'Markdown' });
     }
+});
+
+// Add media message handler to block uploads
+bot.on(['document', 'photo', 'video', 'audio'], (ctx) => {
+    ctx.reply('*❌ Sorry! File uploads are not allowed.\n📥 Please use /get command to access available files.*', { parse_mode: 'Markdown' });
 });
 
 // Helper function to determine file type
