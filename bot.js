@@ -383,10 +383,10 @@ bot.action(/file:(.+)/, async (ctx) => {
 
 // Add message handler for text messages
 bot.on('text', (ctx) => {
-    if (ctx.message.text.startsWith('/') && ctx.message.text !== '/get'||'/start') {
-        ctx.reply('*❌ Invalid command!\n📥 Only /get command is available to access files.*', { parse_mode: 'Markdown' });
-    } else if (!ctx.message.text.startsWith('/')) {
+    if (!ctx.message.text.startsWith('/')) {
         ctx.reply('*😔 Sorry! I cannot chat with you yet.\n📥 Please use /get command to access files.*', { parse_mode: 'Markdown' });
+    } else if (ctx.message.text.startsWith('/') && ctx.message.text !== '/get'||'/start') {
+        ctx.reply('*❌ Invalid command!\n📥 Only /get command is available to access files.*', { parse_mode: 'Markdown' });
     }
 });
 
