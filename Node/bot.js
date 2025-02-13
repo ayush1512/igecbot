@@ -66,7 +66,7 @@ connectDB();
 
 // Start command
 bot.command('start', (ctx) => {
-    ctx.reply('*Welcome!* Use /upload to send me any file to store it. Use /get to see your stored files.', { parse_mode: 'Markdown' });
+    ctx.reply('*🎉 Welcome!* \n* 📥 Use /get to search the files you need.*', { parse_mode: 'Markdown' });
 });
 
 // Handle upload command
@@ -74,7 +74,7 @@ bot.command('upload', (ctx) => {
     ctx.session = {
         uploading: true
     };
-    ctx.reply('*Please send me the file you want to upload.*', { parse_mode: 'Markdown' });
+    ctx.reply('*📤 Please send me the file you want to upload.*', { parse_mode: 'Markdown' });
 });
 
 // Handle file uploads
@@ -98,16 +98,16 @@ bot.on(['document', 'photo', 'video', 'audio'], async (ctx) => {
         });
 
         await newFile.save();
-        ctx.reply('*File saved successfully!* Use /get to access and categorize your files.', { parse_mode: 'Markdown' });
+        ctx.reply('*✅ File saved successfully!*\n*📥 Use /get to access and categorize your files.*', { parse_mode: 'Markdown' });
     } catch (error) {
         console.error('Error handling file upload:', error);
-        ctx.reply('*Sorry, there was an error handling your file upload.*', { parse_mode: 'Markdown' });
+        ctx.reply('*❌ Sorry, there was an error handling your file upload.*', { parse_mode: 'Markdown' });
     }
 });
 
 // List user's files - start with year selection
 bot.command('get', async (ctx) => {
-    await ctx.reply('*Select Year:*', {
+    await ctx.reply('*📚 Select Year:*', {
         parse_mode: 'Markdown',
         reply_markup: {
             inline_keyboard: [
@@ -123,12 +123,13 @@ bot.command('get', async (ctx) => {
 // Handle year/semester selection for listing
 bot.action(/listYearSem:(.+)/, async (ctx) => {
     try {
+        // Delete the current message
+        await ctx.deleteMessage();
+
         const yearSem = ctx.match[1];
-        
         if (!ctx.session) {
             ctx.session = {};
         }
-        
         ctx.session.selectedYearSem = yearSem;
 
         // Different branch options based on year
@@ -154,21 +155,29 @@ bot.action(/listYearSem:(.+)/, async (ctx) => {
             ]
         };
 
-        await ctx.reply('*Select Branch:*', {
+        const sentMessage = await ctx.reply('*📑 Select Branch:*', {
             parse_mode: 'Markdown',
             reply_markup: branchKeyboard
         });
+        
+        // Store message ID for later deletion
+        ctx.session.lastMessageId = sentMessage.message_id;
+        
         await ctx.answerCbQuery();
     } catch (error) {
         console.error('Error handling year selection:', error);
-        ctx.reply('*Sorry, there was an error processing your request.*', { parse_mode: 'Markdown' });
+        ctx.reply('*❌ Sorry, there was an error processing your request.*', { parse_mode: 'Markdown' });
     }
 });
 
 // Handle branch selection
 bot.action(/listBranch:(.+)/, async (ctx) => {
     try {
-        // Initialize session if it doesn't exist
+        // Delete the previous message if exists
+        if (ctx.session?.lastMessageId) {
+            await ctx.telegram.deleteMessage(ctx.chat.id, ctx.session.lastMessageId).catch(() => {});
+        }
+
         if (!ctx.session) {
             ctx.session = {};
         }
@@ -176,7 +185,7 @@ bot.action(/listBranch:(.+)/, async (ctx) => {
         const branch = ctx.match[1];
         ctx.session.selectedBranch = branch;
 
-        await ctx.reply('*Select Category:*', {
+        const sentMessage = await ctx.reply('*📑 Select Category:*', {
             parse_mode: 'Markdown',
             reply_markup: {
                 inline_keyboard: [
@@ -188,16 +197,25 @@ bot.action(/listBranch:(.+)/, async (ctx) => {
                 ]
             }
         });
+
+        // Store new message ID
+        ctx.session.lastMessageId = sentMessage.message_id;
+        
         await ctx.answerCbQuery();
     } catch (error) {
         console.error('Error handling branch selection:', error);
-        ctx.reply('*Sorry, there was an error processing your request.*', { parse_mode: 'Markdown' });
+        ctx.reply('*❌ Sorry, there was an error processing your request.*', { parse_mode: 'Markdown' });
     }
 });
 
 // Handle category selection and show filtered files
 bot.action(/listCategory:(.+)/, async (ctx) => {
     try {
+        // Delete the previous message if exists
+        if (ctx.session?.lastMessageId) {
+            await ctx.telegram.deleteMessage(ctx.chat.id, ctx.session.lastMessageId).catch(() => {});
+        }
+
         // Initialize session if it doesn't exist
         if (!ctx.session) {
             ctx.session = {};
@@ -226,7 +244,25 @@ bot.action(/listCategory:(.+)/, async (ctx) => {
 
         if (files.length === 0) {
             const category = fileCatgry === 'all' ? 'any category' : fileCatgry;
-            return ctx.reply(`❌ No files found in ${category} for Year ${yearSem} - ${branch.toUpperCase()} 📂`, { parse_mode: 'Markdown' });
+            await ctx.reply(`*❌ No files found in ${category} for Year ${yearSem} - ${branch.toUpperCase()} 📂*`, { 
+                parse_mode: 'Markdown' 
+            });
+            
+            // Wait a moment before showing the year selection
+            setTimeout(async () => {
+                await ctx.reply('*📚 Select Year:*', {
+                    parse_mode: 'Markdown',
+                    reply_markup: {
+                        inline_keyboard: [
+                            [{ text: '1️⃣', callback_data: 'listYearSem:1' }],
+                            [{ text: '2️⃣', callback_data: 'listYearSem:2' }],
+                            [{ text: '3️⃣', callback_data: 'listYearSem:3' }],
+                            [{ text: '4️⃣', callback_data: 'listYearSem:4' }]
+                        ]
+                    }
+                });
+            }, 1000); // 1.5 second delay
+            return;
         }
 
         const keyboard = files.map((file) => [{
@@ -237,12 +273,14 @@ bot.action(/listCategory:(.+)/, async (ctx) => {
         }]);
 
         const categoryDisplay = fileCatgry === 'all' ? 'All Files' : fileCatgry;
-        await ctx.reply(`*📂 ${categoryDisplay} (Year ${yearSem} - ${branch.toUpperCase()}):*`, {
+        const sentMessage = await ctx.reply(`*📂 ${categoryDisplay} (Year ${yearSem} - ${branch.toUpperCase()}):*`, {
             parse_mode: 'Markdown',
             reply_markup: {
                 inline_keyboard: keyboard
             }
         });
+
+        ctx.session.lastMessageId = sentMessage.message_id;
         await ctx.answerCbQuery();
     } catch (error) {
         console.error('Error fetching files:', error);
@@ -290,7 +328,7 @@ bot.action('backToMenu', async (ctx) => {
         }
 
         // Replicate /get command functionality
-        await ctx.reply('*Select Year:*', {
+        await ctx.reply('*📚 Select Year:*', {
             parse_mode: 'Markdown',
             reply_markup: {
                 inline_keyboard: [
@@ -346,9 +384,9 @@ bot.action(/file:(.+)/, async (ctx) => {
 // Add message handler for text messages
 bot.on('text', (ctx) => {
     if (ctx.message.text.startsWith('/') && ctx.message.text !== '/get'||'/start') {
-        ctx.reply('*❌ Invalid command!\nOnly /get command is available to access files 📂*', { parse_mode: 'Markdown' });
+        ctx.reply('*❌ Invalid command!\n📥 Only /get command is available to access files.*', { parse_mode: 'Markdown' });
     } else if (!ctx.message.text.startsWith('/')) {
-        ctx.reply('*😔 Sorry! I can not chat with you yet.\nPlease use /get command to access files 📂*', { parse_mode: 'Markdown' });
+        ctx.reply('*😔 Sorry! I cannot chat with you yet.\n📥 Please use /get command to access files.*', { parse_mode: 'Markdown' });
     }
 });
 
@@ -364,7 +402,7 @@ function getFileType(message) {
 // Error handling
 bot.catch((err, ctx) => {
     console.error('Bot error:', err);
-    ctx.reply('*An error occurred while processing your request.*', { parse_mode: 'Markdown' });
+    ctx.reply('*❌ An error occurred while processing your request.*', { parse_mode: 'Markdown' });
 });
 
 // Graceful shutdown
