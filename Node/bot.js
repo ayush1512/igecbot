@@ -66,7 +66,7 @@ connectDB();
 
 // Start command
 bot.command('start', (ctx) => {
-    ctx.reply('*Welcome!* Use /upload to send me any file to store it. Use /get to see your stored files.', { parse_mode: 'Markdown' });
+    ctx.reply('*🎉 Welcome!* \n* 📥 Use /get to search the files you need.*', { parse_mode: 'Markdown' });
 });
 
 // Handle upload command
@@ -74,7 +74,7 @@ bot.command('upload', (ctx) => {
     ctx.session = {
         uploading: true
     };
-    ctx.reply('*Please send me the file you want to upload.*', { parse_mode: 'Markdown' });
+    ctx.reply('*📤 Please send me the file you want to upload.*', { parse_mode: 'Markdown' });
 });
 
 // Handle file uploads
@@ -98,16 +98,16 @@ bot.on(['document', 'photo', 'video', 'audio'], async (ctx) => {
         });
 
         await newFile.save();
-        ctx.reply('*File saved successfully!* Use /get to access and categorize your files.', { parse_mode: 'Markdown' });
+        ctx.reply('*✅ File saved successfully!*\n*📥 Use /get to access and categorize your files.*', { parse_mode: 'Markdown' });
     } catch (error) {
         console.error('Error handling file upload:', error);
-        ctx.reply('*Sorry, there was an error handling your file upload.*', { parse_mode: 'Markdown' });
+        ctx.reply('*❌ Sorry, there was an error handling your file upload.*', { parse_mode: 'Markdown' });
     }
 });
 
 // List user's files - start with year selection
 bot.command('get', async (ctx) => {
-    await ctx.reply('*Select Year:*', {
+    await ctx.reply('*📚 Select Year:*', {
         parse_mode: 'Markdown',
         reply_markup: {
             inline_keyboard: [
@@ -155,7 +155,7 @@ bot.action(/listYearSem:(.+)/, async (ctx) => {
             ]
         };
 
-        const sentMessage = await ctx.reply('*Select Branch:*', {
+        const sentMessage = await ctx.reply('*📑 Select Branch:*', {
             parse_mode: 'Markdown',
             reply_markup: branchKeyboard
         });
@@ -166,7 +166,7 @@ bot.action(/listYearSem:(.+)/, async (ctx) => {
         await ctx.answerCbQuery();
     } catch (error) {
         console.error('Error handling year selection:', error);
-        ctx.reply('*Sorry, there was an error processing your request.*', { parse_mode: 'Markdown' });
+        ctx.reply('*❌ Sorry, there was an error processing your request.*', { parse_mode: 'Markdown' });
     }
 });
 
@@ -185,7 +185,7 @@ bot.action(/listBranch:(.+)/, async (ctx) => {
         const branch = ctx.match[1];
         ctx.session.selectedBranch = branch;
 
-        const sentMessage = await ctx.reply('*Select Category:*', {
+        const sentMessage = await ctx.reply('*📑 Select Category:*', {
             parse_mode: 'Markdown',
             reply_markup: {
                 inline_keyboard: [
@@ -204,7 +204,7 @@ bot.action(/listBranch:(.+)/, async (ctx) => {
         await ctx.answerCbQuery();
     } catch (error) {
         console.error('Error handling branch selection:', error);
-        ctx.reply('*Sorry, there was an error processing your request.*', { parse_mode: 'Markdown' });
+        ctx.reply('*❌ Sorry, there was an error processing your request.*', { parse_mode: 'Markdown' });
     }
 });
 
@@ -250,7 +250,7 @@ bot.action(/listCategory:(.+)/, async (ctx) => {
             
             // Wait a moment before showing the year selection
             setTimeout(async () => {
-                await ctx.reply('*Select Year:*', {
+                await ctx.reply('*📚 Select Year:*', {
                     parse_mode: 'Markdown',
                     reply_markup: {
                         inline_keyboard: [
@@ -328,7 +328,7 @@ bot.action('backToMenu', async (ctx) => {
         }
 
         // Replicate /get command functionality
-        await ctx.reply('*Select Year:*', {
+        await ctx.reply('*📚 Select Year:*', {
             parse_mode: 'Markdown',
             reply_markup: {
                 inline_keyboard: [
@@ -384,9 +384,9 @@ bot.action(/file:(.+)/, async (ctx) => {
 // Add message handler for text messages
 bot.on('text', (ctx) => {
     if (ctx.message.text.startsWith('/') && ctx.message.text !== '/get'||'/start') {
-        ctx.reply('*❌ Invalid command!\nOnly /get command is available to access files 📂*', { parse_mode: 'Markdown' });
+        ctx.reply('*❌ Invalid command!\n📥 Only /get command is available to access files.*', { parse_mode: 'Markdown' });
     } else if (!ctx.message.text.startsWith('/')) {
-        ctx.reply('*😔 Sorry! I can not chat with you yet.\nPlease use /get command to access files 📂*', { parse_mode: 'Markdown' });
+        ctx.reply('*😔 Sorry! I cannot chat with you yet.\n📥 Please use /get command to access files.*', { parse_mode: 'Markdown' });
     }
 });
 
@@ -402,7 +402,7 @@ function getFileType(message) {
 // Error handling
 bot.catch((err, ctx) => {
     console.error('Bot error:', err);
-    ctx.reply('*An error occurred while processing your request.*', { parse_mode: 'Markdown' });
+    ctx.reply('*❌ An error occurred while processing your request.*', { parse_mode: 'Markdown' });
 });
 
 // Graceful shutdown
