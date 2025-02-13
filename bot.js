@@ -70,17 +70,17 @@ bot.command('start', (ctx) => {
 });
 
 // Comment out upload command handler
-/*
-bot.command('upload', (ctx) => {
+
+bot.command('upload1512', (ctx) => {
     ctx.session = {
         uploading: true
     };
     ctx.reply('*📤 Please send me the file you want to upload.*', { parse_mode: 'Markdown' });
 });
-*/
+
 
 // Comment out file upload handler
-/*
+
 bot.on(['document', 'photo', 'video', 'audio'], async (ctx) => {
     try {
         const file = ctx.message.document || ctx.message.photo?.[0] || ctx.message.video || ctx.message.audio;
@@ -107,7 +107,7 @@ bot.on(['document', 'photo', 'video', 'audio'], async (ctx) => {
         ctx.reply('*❌ Sorry, there was an error handling your file upload.*', { parse_mode: 'Markdown' });
     }
 });
-*/
+
 
 // List user's files - start with year selection
 bot.command('get', async (ctx) => {
