@@ -66,7 +66,8 @@ connectDB();
 
 // Start command - removed upload mention
 bot.command('start', (ctx) => {
-    ctx.reply('*🎉 Welcome!* \n*📥 Use /get to search and download files.*', { parse_mode: 'Markdown' });
+    const firstName = ctx.from.first_name;
+    ctx.reply(`*🎉 Welcome ${firstName}!* \n*📥 Use /get to search and download files.*`, { parse_mode: 'Markdown' });
 });
 
 // Comment out upload command handler
