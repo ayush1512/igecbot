@@ -71,7 +71,7 @@ bot.command('start', (ctx) => {
 
 // Comment out upload command handler
 
-bot.command('process.env.uplCmd', (ctx) => {
+bot.command(`${process.env.uplCmd}`, (ctx) => {
     ctx.session = {
         uploading: true
     };
