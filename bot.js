@@ -1,6 +1,8 @@
 require('dotenv').config();
 const { Telegraf, session } = require('telegraf');
 const mongoose = require('mongoose');
+const trackUserStats = require('./middlewares/statsTracking');
+const UserStats = require('./models/UserStats');
 
 // Configuration
 const config = {
@@ -58,8 +60,9 @@ async function connectDB() {
 // Initialize bot
 const bot = new Telegraf(config.BOT_TOKEN);
 
-// Enable session middleware
+// Enable session middleware and stats tracking
 bot.use(session());
+bot.use(trackUserStats);
 
 // Connect to MongoDB
 connectDB();
@@ -386,6 +389,30 @@ bot.action(/file:(.+)/, async (ctx) => {
     }
 });
 
+// Add stats command
+bot.command(`${process.env.statsCmd}`, async (ctx) => {
+    try {
+        const stats = await UserStats.find().sort({ interactions: -1 });
+        const totalUsers = stats.length;
+        const totalInteractions = stats.reduce((sum, user) => sum + user.interactions, 0);
+
+        let message = '*📊 Bot Statistics*\n\n';
+        message += `*Total Users:* ${totalUsers}\n`;
+        message += `*Total Interactions:* ${totalInteractions}\n\n`;
+        message += '*👥 User Interactions:*\n';
+
+        stats.forEach(user => {
+            const name = user.firstName || user.username || 'Unknown';
+            message += `- ${name}: ${user.interactions} interactions\n`;
+        });
+
+        await ctx.reply(message, { parse_mode: 'Markdown' });
+    } catch (error) {
+        console.error('Error generating stats:', error);
+        ctx.reply('*❌ Error generating statistics*', { parse_mode: 'Markdown' });
+    }
+});
+
 // Modified text message handler to block uploads
 bot.on('text', (ctx) => {
     if (!ctx.message.text.startsWith('/')) {
@@ -399,6 +426,7 @@ bot.on('text', (ctx) => {
 bot.on(['document', 'photo', 'video', 'audio'], (ctx) => {
     ctx.reply('*❌ Sorry! File uploads are not allowed.\n📥 Please use /get command to access available files.*', { parse_mode: 'Markdown' });
 });
+
 
 // Helper function to determine file type
 function getFileType(message) {
