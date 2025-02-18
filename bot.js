@@ -413,6 +413,21 @@ bot.command(`${process.env.statsCmd}`, async (ctx) => {
     }
 });
 
+// A help command to help user or send file.
+bot.command('help', (ctx) => {
+    const targetUserId = '1379835264'; 
+    const predefinedText = 'Hello! I want to contribute by sharing resources.';
+
+    ctx.telegram.sendMessage(targetUserId, predefinedText)
+        .then(() => {
+            ctx.reply('Message sent successfully!');
+        })
+        .catch((error) => {
+            console.error('Error sending message:', error);
+            ctx.reply('Failed to send the message.');
+        });
+});
+
 // Modified text message handler to block uploads
 bot.on('text', (ctx) => {
     if (!ctx.message.text.startsWith('/')) {
