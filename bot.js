@@ -7,7 +7,8 @@ const UserStats = require('./models/UserStats');
 // Configuration
 const config = {
     BOT_TOKEN: process.env.BOT_TOKEN,
-    MONGO_URI: process.env.MONGO_URI
+    MONGO_URI: process.env.MONGO_URI,
+    BOT_OWNER: process.env.BOT_OWNER // Add this line
 };
 
 // MongoDB Schema
@@ -413,12 +414,41 @@ bot.command(`${process.env.statsCmd}`, async (ctx) => {
     }
 });
 
+// Add submit command to redirect to bot owner
+bot.command('submit', (ctx) => {
+    if (!config.BOT_OWNER) {
+        return ctx.reply('*❌ Sorry, file submission is currently unavailable.*', { parse_mode: 'Markdown' });
+    }
+    
+    const ownerUsername = config.BOT_OWNER.startsWith('@') ? config.BOT_OWNER.substring(1) : config.BOT_OWNER;
+    const firstName = ctx.from.first_name;
+    ctx.reply(
+        `*👋 Hey! ${firstName} thanks for taking an initiative*\n`+
+        `*📤 To submit files, contact admin*\n\n` +
+        '*📝 Please include:*\n' +
+        '📚 Year and Branch\n' +
+        '📖 Subject/Topic\n' +
+        '📁 File type (Notes/QB/etc.)',
+        {
+            parse_mode: 'Markdown',
+            reply_markup: {
+                inline_keyboard: [
+                    [{
+                        text: '📤 Submit Files',
+                        url: `https://t.me/${ownerUsername}`
+                    }]
+                ]
+            }
+        }
+    );
+});
+
 // Modified text message handler to block uploads
 bot.on('text', (ctx) => {
     if (!ctx.message.text.startsWith('/')) {
-        ctx.reply('*😔 Sorry! I cannot accept messages or files.\n📥 Please use /get command to access files.*', { parse_mode: 'Markdown' });
-    } else if (ctx.message.text !== '/get' && ctx.message.text !== '/start') {
-        ctx.reply('*❌ Invalid command!\n📥 Only /get command is available to access files.*', { parse_mode: 'Markdown' });
+        ctx.reply('*😔 Sorry! I cannot accept messages or files.\n📥 Use /get to access files or /submit to share files.*', { parse_mode: 'Markdown' });
+    } else if (ctx.message.text !== '/get' && ctx.message.text !== '/start' && ctx.message.text !== '/submit') {
+        ctx.reply('*❌ Invalid command!\n📥 Available commands: /get (access files) and /submit (share files)*', { parse_mode: 'Markdown' });
     }
 });
 
