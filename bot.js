@@ -68,25 +68,39 @@ bot.use(trackUserStats);
 // Connect to MongoDB
 connectDB();
 
-// Start command - removed upload mention
+// Start command
 bot.command('start', (ctx) => {
+    // Downtime message
+    ctx.reply('*🛠️ Bot Maintenance*\n\n*The bot is currently undergoing maintenance and is temporarily unavailable. Please try again later.*', { parse_mode: 'Markdown' });
+    
+    // Original code commented out
+    /*
     const firstName = ctx.from.first_name;
     ctx.reply(`*🎉 Welcome ${firstName}!* \n*📥 Use /get to search and download files.*`, { parse_mode: 'Markdown' });
+    */
 });
 
-// Comment out upload command handler
-
+// Upload command handler
 bot.command(`${process.env.uplCmd}`, (ctx) => {
+    // Downtime message
+    ctx.reply('*🛠️ Bot Maintenance*\n\n*The bot is currently undergoing maintenance and is temporarily unavailable. Please try again later.*', { parse_mode: 'Markdown' });
+    
+    // Original code commented out
+    /*
     ctx.session = {
         uploading: true
     };
     ctx.reply('*📤 Please send me the file you want to upload.*', { parse_mode: 'Markdown' });
+    */
 });
 
-
-// Comment out file upload handler
-
+// File upload handler
 bot.on(['document', 'photo', 'video', 'audio'], async (ctx) => {
+    // Downtime message
+    ctx.reply('*🛠️ Bot Maintenance*\n\n*The bot is currently undergoing maintenance and is temporarily unavailable. Please try again later.*', { parse_mode: 'Markdown' });
+    
+    // Original code commented out
+    /*
     try {
         const file = ctx.message.document || ctx.message.photo?.[0] || ctx.message.video || ctx.message.audio;
         const fileName = ctx.message.document?.file_name || 'untitled';
@@ -111,11 +125,16 @@ bot.on(['document', 'photo', 'video', 'audio'], async (ctx) => {
         console.error('Error handling file upload:', error);
         ctx.reply('*❌ Sorry, there was an error handling your file upload.*', { parse_mode: 'Markdown' });
     }
+    */
 });
 
-
-// List user's files - start with year selection
+// Get command
 bot.command('get', async (ctx) => {
+    // Downtime message
+    ctx.reply('*🛠️ Bot Maintenance*\n\n*The bot is currently undergoing maintenance and is temporarily unavailable. Please try again later.*', { parse_mode: 'Markdown' });
+    
+    // Original code commented out
+    /*
     await ctx.reply('*📚 Select Year:*', {
         parse_mode: 'Markdown',
         reply_markup: {
@@ -127,336 +146,185 @@ bot.command('get', async (ctx) => {
             ]
         }
     });
+    */
 });
 
-// Handle year/semester selection for listing
+// Year/semester selection handler
 bot.action(/listYearSem:(.+)/, async (ctx) => {
-    try {
-        // Delete the current message
-        await ctx.deleteMessage();
-
-        const yearSem = ctx.match[1];
-        if (!ctx.session) {
-            ctx.session = {};
-        }
-        ctx.session.selectedYearSem = yearSem;
-
-        // Different branch options based on year
-        const branchKeyboard = yearSem === '1' ? {
-            inline_keyboard: [
-                [{ text: '💻 IT', callback_data: 'listBranch:it' }],
-                [{ text: '📡 EC', callback_data: 'listBranch:ec' }],
-                [{ text: '⚡ EE', callback_data: 'listBranch:ee' }],
-                [{ text: '🔧 ME', callback_data: 'listBranch:me' }],
-                [{ text: '🏗️ CE', callback_data: 'listBranch:ce' }],
-                [{ text: '📐 Mathematics', callback_data: 'listBranch:maths' }],
-                [{ text: '🧪 Chemistry', callback_data: 'listBranch:chem' }],
-                [{ text: '🔬 Physics', callback_data: 'listBranch:phy' }],
-                [{ text: '📖 English', callback_data: 'listBranch:eng' }]
-            ]
-        } : {
-            inline_keyboard: [
-                [{ text: '💻 IT', callback_data: 'listBranch:it' }],
-                [{ text: '📡 EC', callback_data: 'listBranch:ec' }],
-                [{ text: '⚡ EE', callback_data: 'listBranch:ee' }],
-                [{ text: '🔧 ME', callback_data: 'listBranch:me' }],
-                [{ text: '🏗️ CE', callback_data: 'listBranch:ce' }]
-            ]
-        };
-
-        const sentMessage = await ctx.reply('*📑 Select Branch:*', {
-            parse_mode: 'Markdown',
-            reply_markup: branchKeyboard
-        });
-        
-        // Store message ID for later deletion
-        ctx.session.lastMessageId = sentMessage.message_id;
-        
-        await ctx.answerCbQuery();
-    } catch (error) {
-        console.error('Error handling year selection:', error);
-        ctx.reply('*❌ Sorry, there was an error processing your request.*', { parse_mode: 'Markdown' });
-    }
-});
-
-// Handle branch selection
-bot.action(/listBranch:(.+)/, async (ctx) => {
+    // Downtime message
+    ctx.reply('*🛠️ Bot Maintenance*\n\n*The bot is currently undergoing maintenance and is temporarily unavailable. Please try again later.*', { parse_mode: 'Markdown' });
+    await ctx.answerCbQuery('Bot is currently under maintenance');
+    
+    // Original code commented out
+    /*
     try {
         // Delete the previous message if exists
         if (ctx.session?.lastMessageId) {
             await ctx.telegram.deleteMessage(ctx.chat.id, ctx.session.lastMessageId).catch(() => {});
         }
 
+        const yearSem = ctx.match[1];
+        
+        // Initialize session if it doesn't exist
         if (!ctx.session) {
             ctx.session = {};
         }
-
-        const branch = ctx.match[1];
-        ctx.session.selectedBranch = branch;
-
-        const sentMessage = await ctx.reply('*📑 Select Category:*', {
+        
+        ctx.session.selectedYearSem = yearSem;
+        
+        const sentMessage = await ctx.reply('*🎓 Select Branch:*', {
             parse_mode: 'Markdown',
             reply_markup: {
                 inline_keyboard: [
-                    [{ text: '📚 Books', callback_data: 'listCategory:books' }],
-                    [{ text: '📝 Notes', callback_data: 'listCategory:notes' }],
-                    [{ text: '📄 Question Papers', callback_data: 'listCategory:qp' }],
-                    [{ text: '📑 Shivani QB', callback_data: 'listCategory:qb' }],
-                    [{ text: '📂 All Files', callback_data: 'listCategory:all' }]
+                    [{ text: '💻 CSE', callback_data: 'listBranch:cse' }],
+                    [{ text: '💾 IT', callback_data: 'listBranch:it' }],
+                    [{ text: '⚡️ ECE', callback_data: 'listBranch:ece' }],
+                    [{ text: '🔋 EE', callback_data: 'listBranch:ee' }]
                 ]
             }
         });
-
+        
         // Store new message ID
         ctx.session.lastMessageId = sentMessage.message_id;
         
         await ctx.answerCbQuery();
     } catch (error) {
+        console.error('Error handling year/semester selection:', error);
+        ctx.reply('*❌ Sorry, there was an error processing your request.*', { parse_mode: 'Markdown' });
+    }
+    */
+});
+
+// Branch selection handler
+bot.action(/listBranch:(.+)/, async (ctx) => {
+    // Downtime message
+    ctx.reply('*🛠️ Bot Maintenance*\n\n*The bot is currently undergoing maintenance and is temporarily unavailable. Please try again later.*', { parse_mode: 'Markdown' });
+    await ctx.answerCbQuery('Bot is currently under maintenance');
+    
+    // Original code commented out
+    /*
+    try {
+        // ...existing code...
+    } catch (error) {
         console.error('Error handling branch selection:', error);
         ctx.reply('*❌ Sorry, there was an error processing your request.*', { parse_mode: 'Markdown' });
     }
+    */
 });
 
-// Handle category selection and show filtered files
+// Category selection handler
 bot.action(/listCategory:(.+)/, async (ctx) => {
+    // Downtime message
+    ctx.reply('*🛠️ Bot Maintenance*\n\n*The bot is currently undergoing maintenance and is temporarily unavailable. Please try again later.*', { parse_mode: 'Markdown' });
+    await ctx.answerCbQuery('Bot is currently under maintenance');
+    
+    // Original code commented out
+    /*
     try {
-        // Delete the previous message if exists
-        if (ctx.session?.lastMessageId) {
-            await ctx.telegram.deleteMessage(ctx.chat.id, ctx.session.lastMessageId).catch(() => {});
-        }
-
-        // Initialize session if it doesn't exist
-        if (!ctx.session) {
-            ctx.session = {};
-        }
-
-        const fileCatgry = ctx.match[1];
-        const yearSem = ctx.session.selectedYearSem;
-        const branch = ctx.session.selectedBranch;
-
-        // Validate required session data
-        if (!yearSem || !branch) {
-            return ctx.reply('*⌛ Session expired. Please start over with /get command 🔄*', { parse_mode: 'Markdown' });
-        }
-
-        // Build query based on whether we want all files or specific category
-        const query = {
-            yearSem: yearSem,
-            branch: branch
-        };
-
-        if (fileCatgry !== 'all') {
-            query.fileCatgry = fileCatgry;
-        }
-
-        const files = await File.find(query);
-
-        if (files.length === 0) {
-            const category = fileCatgry === 'all' ? 'any category' : fileCatgry;
-            await ctx.reply(`*❌ No files found in ${category} for Year ${yearSem} - ${branch.toUpperCase()} 📂*`, { 
-                parse_mode: 'Markdown' 
-            });
-            
-            // Wait a moment before showing the year selection
-            setTimeout(async () => {
-                await ctx.reply('*📚 Select Year:*', {
-                    parse_mode: 'Markdown',
-                    reply_markup: {
-                        inline_keyboard: [
-                            [{ text: '1️⃣', callback_data: 'listYearSem:1' }],
-                            [{ text: '2️⃣', callback_data: 'listYearSem:2' }],
-                            [{ text: '3️⃣', callback_data: 'listYearSem:3' }],
-                            [{ text: '4️⃣', callback_data: 'listYearSem:4' }]
-                        ]
-                    }
-                });
-            }, 1000); // 1.5 second delay
-            return;
-        }
-
-        const keyboard = files.map((file) => [{
-            text: fileCatgry === 'all' ? 
-                `📁 ${file.fileName} (${file.fileCatgry})` : 
-                `📁 ${file.fileName}`,
-            callback_data: `fileOptions:${file._id}`
-        }]);
-
-        const categoryDisplay = fileCatgry === 'all' ? 'All Files' : fileCatgry;
-        const sentMessage = await ctx.reply(`*📂 ${categoryDisplay} (Year ${yearSem} - ${branch.toUpperCase()}):*`, {
-            parse_mode: 'Markdown',
-            reply_markup: {
-                inline_keyboard: keyboard
-            }
-        });
-
-        ctx.session.lastMessageId = sentMessage.message_id;
-        await ctx.answerCbQuery();
+        // ...existing code...
     } catch (error) {
         console.error('Error fetching files:', error);
         ctx.reply('*❌ Sorry, there was an error fetching your files.\n🔄 Please try again with /get command*', { parse_mode: 'Markdown' });
     }
+    */
 });
 
-// Handle file options selection
+// File options handler
 bot.action(/fileOptions:(.+)/, async (ctx) => {
+    // Downtime message
+    ctx.reply('*🛠️ Bot Maintenance*\n\n*The bot is currently undergoing maintenance and is temporarily unavailable. Please try again later.*', { parse_mode: 'Markdown' });
+    await ctx.answerCbQuery('Bot is currently under maintenance');
+    
+    // Original code commented out
+    /*
     try {
-        const fileId = ctx.match[1];
-        const file = await File.findById(fileId);
-        
-        if (!file) {
-            return ctx.reply('*❌ File not found*', { parse_mode: 'Markdown' });
-        }
-
-        await ctx.reply(`*📁 File: ${file.fileName}*`, {
-            parse_mode: 'Markdown',
-            reply_markup: {
-                inline_keyboard: [
-                    [{ text: '📥 Download', callback_data: `file:${fileId}` }],
-                    [{ text: '🔙 Back to Menu', callback_data: 'backToMenu' }]
-                ]
-            }
-        });
-        await ctx.answerCbQuery();
+        // ...existing code...
     } catch (error) {
         console.error('Error showing file options:', error);
         ctx.reply('*❌ Sorry, there was an error processing your request*', { parse_mode: 'Markdown' });
     }
+    */
 });
 
-// Add back to menu handler
+// Back to menu handler
 bot.action('backToMenu', async (ctx) => {
+    // Downtime message
+    ctx.reply('*🛠️ Bot Maintenance*\n\n*The bot is currently undergoing maintenance and is temporarily unavailable. Please try again later.*', { parse_mode: 'Markdown' });
+    await ctx.answerCbQuery('Bot is currently under maintenance');
+    
+    // Original code commented out
+    /*
     try {
-        // Delete the last 5 messages
-        const messageId = ctx.callbackQuery.message.message_id;
-        for (let i = 0; i < 5; i++) {
-            try {
-                await ctx.telegram.deleteMessage(ctx.chat.id, messageId - i);
-            } catch (err) {
-                console.log(`Could not delete message ${messageId - i}:`, err.message);
-            }
-        }
-
-        // Replicate /get command functionality
-        await ctx.reply('*📚 Select Year:*', {
-            parse_mode: 'Markdown',
-            reply_markup: {
-                inline_keyboard: [
-                    [{ text: '1️⃣', callback_data: 'listYearSem:1' }],
-                    [{ text: '2️⃣', callback_data: 'listYearSem:2' }],
-                    [{ text: '3️⃣', callback_data: 'listYearSem:3' }],
-                    [{ text: '4️⃣', callback_data: 'listYearSem:4' }]
-                ]
-            }
-        });
-        await ctx.answerCbQuery();
+        // ...existing code...
     } catch (error) {
         console.error('Error in backToMenu handler:', error);
         ctx.reply('*❌ Please use /get command to start over*', { parse_mode: 'Markdown' });
     }
+    */
 });
 
-// Handle file selection
+// File selection handler
 bot.action(/file:(.+)/, async (ctx) => {
+    // Downtime message
+    ctx.reply('*🛠️ Bot Maintenance*\n\n*The bot is currently undergoing maintenance and is temporarily unavailable. Please try again later.*', { parse_mode: 'Markdown' });
+    await ctx.answerCbQuery('Bot is currently under maintenance');
+    
+    // Original code commented out
+    /*
     try {
-        const fileId = ctx.match[1];
-        const file = await File.findById(fileId);
-        
-        if (!file) {
-            return ctx.reply('*File not found.*', { parse_mode: 'Markdown' });
-        }
-
-        // Send the file back to user based on its type
-        switch (file.fileType) {
-            case 'document':
-                await ctx.replyWithDocument(file.fileId);
-                break;
-            case 'photo':
-                await ctx.replyWithPhoto(file.fileId);
-                break;
-            case 'video':
-                await ctx.replyWithVideo(file.fileId);
-                break;
-            case 'audio':
-                await ctx.replyWithAudio(file.fileId);
-                break;
-            default:
-                ctx.reply('*Unsupported file type.*', { parse_mode: 'Markdown' });
-        }
-
-        await ctx.answerCbQuery();
+        // ...existing code...
     } catch (error) {
         console.error('Error sending file:', error);
         ctx.reply('*❌ Sorry, there was an error retrieving the file*', { parse_mode: 'Markdown' });
     }
+    */
 });
 
-// Add stats command
+// Stats command
 bot.command(`${process.env.statsCmd}`, async (ctx) => {
+    // Downtime message
+    ctx.reply('*🛠️ Bot Maintenance*\n\n*The bot is currently undergoing maintenance and is temporarily unavailable. Please try again later.*', { parse_mode: 'Markdown' });
+    
+    // Original code commented out
+    /*
     try {
-        const stats = await UserStats.find().sort({ interactions: -1 });
-        const totalUsers = stats.length;
-        const totalInteractions = stats.reduce((sum, user) => sum + user.interactions, 0);
-
-        let message = '*📊 Bot Statistics*\n\n';
-        message += `*Total Users:* ${totalUsers}\n`;
-        message += `*Total Interactions:* ${totalInteractions}\n\n`;
-        message += '*👥 User Interactions:*\n';
-
-        stats.forEach(user => {
-            const name = user.firstName || user.username || 'Unknown';
-            message += `- ${name}: ${user.interactions} interactions\n`;
-        });
-
-        await ctx.reply(message, { parse_mode: 'Markdown' });
+        // ...existing code...
     } catch (error) {
         console.error('Error generating stats:', error);
         ctx.reply('*❌ Error generating statistics*', { parse_mode: 'Markdown' });
     }
+    */
 });
 
-// Add submit command to redirect to bot owner
+// Submit command
 bot.command('submit', (ctx) => {
+    // Downtime message
+    ctx.reply('*🛠️ Bot Maintenance*\n\n*The bot is currently undergoing maintenance and is temporarily unavailable. Please try again later.*', { parse_mode: 'Markdown' });
+    
+    // Original code commented out
+    /*
     if (!config.BOT_OWNER) {
         return ctx.reply('*❌ Sorry, file submission is currently unavailable.*', { parse_mode: 'Markdown' });
     }
     
-    const ownerUsername = config.BOT_OWNER.startsWith('@') ? config.BOT_OWNER.substring(1) : config.BOT_OWNER;
-    const firstName = ctx.from.first_name;
-    ctx.reply(
-        `*👋 Hey! ${firstName} thanks for taking an initiative*\n`+
-        `*📤 To submit files, contact admin*\n\n` +
-        '*📝 Please include:*\n' +
-        '📚 Year and Branch\n' +
-        '📖 Subject/Topic\n' +
-        '📁 File type (Notes/QB/etc.)',
-        {
-            parse_mode: 'Markdown',
-            reply_markup: {
-                inline_keyboard: [
-                    [{
-                        text: '📤 Submit Files',
-                        url: `https://t.me/${ownerUsername}`
-                    }]
-                ]
-            }
-        }
-    );
+    // ...existing code...
+    */
 });
 
-// Modified text message handler to block uploads
+// Text message handler
 bot.on('text', (ctx) => {
+    // Downtime message
+    ctx.reply('*🛠️ Bot Maintenance*\n\n*The bot is currently undergoing maintenance and is temporarily unavailable. Please try again later.*', { parse_mode: 'Markdown' });
+    
+    // Original code commented out
+    /*
     if (!ctx.message.text.startsWith('/')) {
         ctx.reply('*😔 Sorry! I cannot accept messages or files.\n📥 Use /get to access files or /submit to share files.*', { parse_mode: 'Markdown' });
     } else if (ctx.message.text !== '/get' && ctx.message.text !== '/start' && ctx.message.text !== '/submit') {
         ctx.reply('*❌ Invalid command!\n📥 Available commands: /get (access files) and /submit (share files)*', { parse_mode: 'Markdown' });
     }
+    */
 });
-
-// Add media message handler to block uploads
-bot.on(['document', 'photo', 'video', 'audio'], (ctx) => {
-    ctx.reply('*❌ Sorry! File uploads are not allowed.\n📥 Please use /get command to access available files.*', { parse_mode: 'Markdown' });
-});
-
 
 // Helper function to determine file type
 function getFileType(message) {
