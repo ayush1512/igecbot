@@ -2,6 +2,11 @@ const File = require('../models/File');
 const UserStats = require('../models/UserStats');
 const fileView = require('../views/fileView');
 const userView = require('../views/userView');
+const Together = require('together-ai')
+const together = new Together({
+    apiKey: process.env.TOGETHER_API_KEY
+});
+
 
 class BotController {
     // Start command handler
@@ -24,6 +29,48 @@ class BotController {
             parse_mode: 'Markdown',
             reply_markup: fileView.yearSelectionKeyboard()
         });
+    }
+
+    // Text handler
+    static async handleTextMessage(ctx) {
+        try {
+            if (!ctx.message || typeof ctx.message.text !== 'string') {
+                console.error('handleTextMessage error: ctx.message or ctx.message.text is undefined', { ctx });
+                return ctx.reply('Sorry, I could not understand your message.');
+            }
+            const userMessage = ctx.message.text;
+            
+            // Skip if it's a command
+            if (userMessage.startsWith('/')) return;
+            
+            try {
+                const response = await together.chat.completions.create({
+                    messages: [
+                        {
+                            role: "system",
+                            content: "You are IGEC Bot's AI assistant. You tell students about the use of this bot for getting study material. You chat with them in a sweet-friendly tone with emojis, and always tell them to use the /get command to get the files, tell them to contribute using the /submit command if they have any study resources that might help others, if they ask questions about Indira Gandhi Engineering College, Sagar, Madhya Pradesh or engineering related answer them but avoid much chatting. Keep responses concise and helpful. "
+                        },
+                        {
+                            role: "user",
+                            content: userMessage
+                        }
+                    ],
+                    model: "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",
+                    max_tokens: 150,
+                    temperature: 0.7
+                });
+
+                await ctx.reply(response.choices[0].message.content);
+            } catch (error) {
+                console.error('Together AI error:', error);
+                await ctx.reply('Sorry, I couldn\'t process your message right now. Try using /get to browse files or /start for help.');
+            }
+        } catch (outerError) {
+            console.error('handleTextMessage outer error:', outerError);
+            if (ctx && ctx.reply) {
+                ctx.reply('An unexpected error occurred.');
+            }
+        }
     }
 
     // Year selection handler
@@ -249,13 +296,7 @@ class BotController {
     }
 
     // Text message handler
-    static async handleTextMessage(ctx) {
-        if (!ctx.message.text.startsWith('/')) {
-            ctx.reply(userView.invalidTextMessage(), { parse_mode: 'Markdown' });
-        } else if (ctx.message.text !== '/get' && ctx.message.text !== '/start' && ctx.message.text !== '/submit') {
-            ctx.reply(userView.invalidCommandMessage(), { parse_mode: 'Markdown' });
-        }
-    }
+    // (Removed duplicate definition to avoid overwriting the main handler with error logging)
 
     // Media message handler
     static async handleMediaMessage(ctx) {
