@@ -49,6 +49,8 @@ const fileSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     }
+}, {
+    collection: 'files'
 });
 
 // Add indexes for better query performance

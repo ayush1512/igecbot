@@ -44,6 +44,8 @@ const userStatsSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     }
+}, {
+    collection: 'userstats'
 });
 
 // Add indexes (userId index is automatically created by unique: true)

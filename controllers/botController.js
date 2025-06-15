@@ -18,33 +18,6 @@ class BotController {
         ctx.reply(fileView.uploadPromptMessage(), { parse_mode: 'Markdown' });
     }
 
-    // File upload handler
-    static async handleFileUpload(ctx) {
-        try {
-            const file = ctx.message.document || ctx.message.photo?.[0] || ctx.message.video || ctx.message.audio;
-            const fileName = ctx.message.document?.file_name || 'untitled';
-
-            const newFile = new File({
-                fileId: file.file_id,
-                fileName: fileName,
-                fileType: BotController.getFileType(ctx.message),
-                uploadedBy: {
-                    userId: ctx.from.id,
-                    username: ctx.from.username
-                },
-                yearSem: '4',
-                branch: 'it',
-                fileCatgry: 'qb'
-            });
-
-            await newFile.save();
-            ctx.reply(fileView.uploadSuccessMessage(), { parse_mode: 'Markdown' });
-        } catch (error) {
-            console.error('Error handling file upload:', error);
-            ctx.reply(fileView.uploadErrorMessage(), { parse_mode: 'Markdown' });
-        }
-    }
-
     // Get command handler
     static async handleGet(ctx) {
         await ctx.reply(fileView.yearSelectionMessage(), {

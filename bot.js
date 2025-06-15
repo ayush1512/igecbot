@@ -4,7 +4,6 @@ const trackUserStats = require('./middlewares/statsTracking');
 const Database = require('./services/database');
 const BotRoutes = require('./routes/botRoutes');
 const express = require('express');
-const fetch = require('node-fetch');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -18,10 +17,14 @@ app.listen(PORT, () => {
 });
 
 if (process.env.RENDER) { // Only run on Render
-    setInterval(() => {
-        fetch(`https://${process.env.RENDER_EXTERNAL_HOSTNAME || 'your-service-name.onrender.com'}/`)
-            .then(() => console.log('Self-ping sent'))
-            .catch(err => console.error('Self-ping failed:', err));
+    setInterval(async () => {
+        try {
+            const fetch = (await import('node-fetch')).default;
+            await fetch(`https://${process.env.RENDER_EXTERNAL_HOSTNAME || 'https://igecbot.onrender.com'}/`);
+            console.log('Self-ping sent');
+        } catch (err) {
+            console.error('Self-ping failed:', err);
+        }
     }, 5 * 60 * 1000); // Ping every 5 minutes
 }
 
@@ -67,3 +70,5 @@ bot.launch().then(() => {
 }).catch((error) => {
     console.error('Error starting bot:', error);
 });
+
+

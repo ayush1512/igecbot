@@ -18,7 +18,6 @@ class BotRoutes {
         bot.action(/file:(.+)/, BotController.handleFileDownload);
 
         // Message handlers
-        bot.on(['document', 'photo', 'video', 'audio'], BotController.handleFileUpload);
         bot.on('text', BotController.handleTextMessage);
 
         // Media message handler (for blocking uploads)
