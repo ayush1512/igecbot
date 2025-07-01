@@ -57,6 +57,7 @@ const fileSchema = new mongoose.Schema({
 fileSchema.index({ yearSem: 1, branch: 1, fileCatgry: 1 });
 fileSchema.index({ uploadedBy: 1 });
 fileSchema.index({ uploadedAt: -1 });
+fileSchema.index({ fileName: 'text', fileCatgry: 'text' });
 
 // Instance methods
 fileSchema.methods.incrementDownloads = function() {

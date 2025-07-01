@@ -39,16 +39,38 @@ class BotController {
                 return ctx.reply('Sorry, I could not understand your message.');
             }
             const userMessage = ctx.message.text;
-            
+
             // Skip if it's a command
             if (userMessage.startsWith('/')) return;
-            
+
+            // Use static method calls
+            const keywords = BotController.extractKeywords(userMessage);
+            const relevantFiles = await BotController.searchRelevantFiles(keywords);
+
+            // Filter files to only show highly relevant ones (score > 5)
+            const highlyRelevantFiles = await BotController.getHighlyRelevantFiles(keywords, relevantFiles);
+
             try {
+                let fileContext = '';
+                if (highlyRelevantFiles.length > 0) {
+                    fileContext = "Available study materials in our database:\n";
+                    highlyRelevantFiles.forEach((file, index) => {
+                        fileContext += `${index + 1}. "${file.fileName}" - ${file.fileCatgry} (${file.yearSem}, ${file.branch})\n`;
+                    });
+                    fileContext += "\nWhen suggesting files, reference them by their exact file name.";
+                } else {
+                    fileContext = "No specific files found matching the query. Suggest using /get command to browse available files.";
+                }
+
                 const response = await together.chat.completions.create({
                     messages: [
                         {
                             role: "system",
-                            content: "You are IGEC Bot's AI assistant. You tell students about the use of this bot for getting study material. You chat with them in a sweet-friendly tone with emojis, and always tell them to use the /get command to get the files, tell them to contribute using the /submit command if they have any study resources that might help others, if they ask questions about Indira Gandhi Engineering College, Sagar, Madhya Pradesh or engineering related answer them but avoid much chatting. Keep responses concise and helpful. "
+                            content: "You are IGEC Bot's AI assistant for Indira Gandhi Engineering College, Sagar, MP. Help students with study materials and academic queries. Use a friendly tone with emojis. Keep responses concise. Always mention /get command for browsing files and /submit for contributing resources. Focus on being helpful for academic needs."
+                        },
+                        {
+                            role: "system",
+                            content: `Context: ${fileContext}`
                         },
                         {
                             role: "user",
@@ -56,21 +78,292 @@ class BotController {
                         }
                     ],
                     model: "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",
-                    max_tokens: 150,
+                    max_tokens: 250,
                     temperature: 0.7
                 });
 
                 await ctx.reply(response.choices[0].message.content);
+
+                // Only show keyboard if we have highly relevant files
+                if (highlyRelevantFiles.length > 0) {
+                    // Additional filtering to show only the most relevant files based on the AI's context
+                    const contextuallyRelevantFiles = BotController.filterContextuallyRelevantFiles(highlyRelevantFiles, keywords);
+                    
+                    if (contextuallyRelevantFiles.length > 0) {
+                        const keyboard = BotController.createFileAccessKeyboard(contextuallyRelevantFiles);
+                        await ctx.reply("📁 Here are the relevant files:", {
+                            reply_markup: {
+                                inline_keyboard: keyboard
+                            }
+                        });
+                    }
+                }
             } catch (error) {
                 console.error('Together AI error:', error);
-                await ctx.reply('Sorry, I couldn\'t process your message right now. Try using /get to browse files or /start for help.');
+                await ctx.reply('Sorry, I couldn\'t process your message right now. Try using /get to browse files or ask a simpler question! 😊');
             }
         } catch (outerError) {
             console.error('handleTextMessage outer error:', outerError);
             if (ctx && ctx.reply) {
-                ctx.reply('An unexpected error occurred.');
+                ctx.reply('An unexpected error occurred. Please try again! 🔄');
             }
         }
+    }
+
+    // Helper methods
+    static extractKeywords(message) {
+        const stopWords = ['the', 'a', 'an', 'and', 'in', 'on', 'at', 'for', 'to', 'of', 'is', 'are', 'i', 'you', 'me', 'my', 'can', 'need', 'want', 'get', 'find', 'help', 'please'];
+        const academicTerms = ['notes', 'syllabus', 'assignment', 'lab', 'manual', 'question', 'paper', 'exam', 'tutorial', 'lecture', 'ppt', 'pdf', 'book', 'study', 'material'];
+        
+        // Branch mappings
+        const branchMappings = {
+            'information technology': 'it',
+            'it': 'it',
+            'computer science': 'it',
+            'cs': 'it',
+            'electronics communication': 'ec',
+            'electronics': 'ec',
+            'ec': 'ec',
+            'ece': 'ec',
+            'electrical engineering': 'ee',
+            'electrical': 'ee',
+            'ee': 'ee',
+            'eee': 'ee',
+            'mechanical engineering': 'me',
+            'mechanical': 'me',
+            'me': 'me',
+            'mech': 'me',
+            'civil engineering': 'ce',
+            'civil': 'ce',
+            'ce': 'ce',
+            'mathematics': 'maths',
+            'maths': 'maths',
+            'math': 'maths',
+            'chemistry': 'chem',
+            'chem': 'chem',
+            'physics': 'phy',
+            'phy': 'phy',
+            'english': 'eng',
+            'eng': 'eng'
+        };
+        
+        // Category mappings
+        const categoryMappings = {
+            'books': 'books',
+            'book': 'books',
+            'textbook': 'books',
+            'textbooks': 'books',
+            'notes': 'notes',
+            'note': 'notes',
+            'class notes': 'notes',
+            'lecture notes': 'notes',
+            'question papers': 'qp',
+            'question paper': 'qp',
+            'qp': 'qp',
+            'papers': 'qp',
+            'paper': 'qp',
+            'exam papers': 'qp',
+            'question books': 'qb',
+            'question book': 'qb',
+            'qb': 'qb',
+            'question bank': 'qb',
+            'questionbank': 'qb'
+        };
+        
+        const words = message.toLowerCase()
+            .replace(/[^\w\s]/g, '')
+            .split(' ')
+            .filter(word => word.length > 1 && !stopWords.includes(word));
+        
+        // Prioritize academic terms and technical keywords
+        const prioritizedWords = words.filter(word => academicTerms.includes(word) || word.length > 3);
+        const finalWords = prioritizedWords.length > 0 ? prioritizedWords : words;
+        
+        // Map terms to database values
+        const mappedWords = [];
+        const originalMessage = message.toLowerCase();
+        
+        // Check for multi-word mappings first
+        for (const [key, value] of Object.entries(branchMappings)) {
+            if (originalMessage.includes(key)) {
+                mappedWords.push(value);
+            }
+        }
+        
+        for (const [key, value] of Object.entries(categoryMappings)) {
+            if (originalMessage.includes(key)) {
+                mappedWords.push(value);
+            }
+        }
+        
+        // Add individual word mappings
+        finalWords.forEach(word => {
+            mappedWords.push(word);
+            if (branchMappings[word]) {
+                mappedWords.push(branchMappings[word]);
+            }
+            if (categoryMappings[word]) {
+                mappedWords.push(categoryMappings[word]);
+            }
+        });
+        
+        // Remove duplicates and return
+        return [...new Set(mappedWords)];
+    }
+
+    static async searchRelevantFiles(keywords) {
+        if (!keywords.length) return [];
+
+        try {
+            // Score-based search for better relevance
+            const files = await File.find({ isActive: { $ne: false } });
+            
+            const scoredFiles = files.map(file => {
+                let score = 0;
+                const fileName = (file.fileName || '').toLowerCase();
+                const category = (file.fileCatgry || '').toLowerCase();
+                const branch = (file.branch || '').toLowerCase();
+                const yearSem = (file.yearSem || '').toLowerCase();
+                
+                // Skip files with missing essential data
+                if (!file.fileName || !file.fileCatgry) {
+                    return { file, score: 0 };
+                }
+                
+                keywords.forEach(keyword => {
+                    const lowerKeyword = keyword.toLowerCase();
+                    
+                    // Highest priority: exact branch match (database values)
+                    if (branch === lowerKeyword) {
+                        score += 20;
+                    }
+                    
+                    // Very high priority: exact category match (database values)
+                    if (category === lowerKeyword) {
+                        score += 15;
+                    }
+                    
+                    // High priority: exact year/semester match
+                    if (yearSem === lowerKeyword) {
+                        score += 12;
+                    }
+                    
+                    // Medium-high priority: filename contains keyword (minimum 4 chars)
+                    if (fileName.includes(lowerKeyword) && lowerKeyword.length >= 4) {
+                        score += 10;
+                    }
+                    
+                    // Lower priority: partial matches in filename for shorter terms (3 chars)
+                    if (fileName.includes(lowerKeyword) && lowerKeyword.length === 3) {
+                        score += 5;
+                    }
+                });
+                
+                return { file, score };
+            });
+
+            // Filter files with score > 5 and sort by relevance
+            const relevantFiles = scoredFiles
+                .filter(item => item.score >= 10) // Increased threshold to reduce false positives
+                .sort((a, b) => b.score - a.score)
+                .slice(0, 6)
+                .map(item => item.file);
+
+            return relevantFiles;
+        } catch (error) {
+            console.error('Error searching files:', error);
+            return [];
+        }
+    }
+
+    static async getHighlyRelevantFiles(keywords, relevantFiles) {
+        if (!relevantFiles.length) return [];
+
+        // Re-score the files to filter only highly relevant ones
+        const highlyRelevantFiles = [];
+        
+        relevantFiles.forEach(file => {
+            let score = 0;
+            let hasStrongMatch = false;
+            const fileName = (file.fileName || '').toLowerCase();
+            const category = (file.fileCatgry || '').toLowerCase();
+            const branch = (file.branch || '').toLowerCase();
+            const yearSem = (file.yearSem || '').toLowerCase();
+            
+            // Skip files with missing essential data
+            if (!file.fileName || !file.fileCatgry) {
+                return;
+            }
+            
+            keywords.forEach(keyword => {
+                const lowerKeyword = keyword.toLowerCase();
+                
+                // Check for strong matches (exact database field matches)
+                if (branch === lowerKeyword) {
+                    score += 15;
+                    hasStrongMatch = true;
+                }
+                if (category === lowerKeyword) {
+                    score += 12;
+                    hasStrongMatch = true;
+                }
+                if (yearSem === lowerKeyword) {
+                    score += 10;
+                    hasStrongMatch = true;
+                }
+                // Only count filename matches if they're substantial (more than 3 chars)
+                if (fileName.includes(lowerKeyword) && lowerKeyword.length > 3) {
+                    score += 8;
+                    hasStrongMatch = true;
+                }
+            });
+            
+            // Only include files with high relevance score AND at least one strong match
+            if (score >= 10 && hasStrongMatch) {
+                highlyRelevantFiles.push(file);
+            }
+        });
+
+        return highlyRelevantFiles;
+    }
+
+    static filterContextuallyRelevantFiles(files, keywords) {
+        // Only show files that have very strong contextual relevance
+        return files.filter(file => {
+            const fileName = (file.fileName || '').toLowerCase();
+            const category = (file.fileCatgry || '').toLowerCase();
+            const branch = (file.branch || '').toLowerCase();
+            const yearSem = (file.yearSem || '').toLowerCase();
+            
+            let relevanceScore = 0;
+            let hasExactMatch = false;
+            
+            keywords.forEach(keyword => {
+                const lowerKeyword = keyword.toLowerCase();
+                
+                // Exact matches get highest priority
+                if (branch === lowerKeyword || category === lowerKeyword || yearSem === lowerKeyword) {
+                    hasExactMatch = true;
+                    relevanceScore += 10;
+                }
+                
+                // Substantial filename matches (4+ characters)
+                if (fileName.includes(lowerKeyword) && lowerKeyword.length >= 4) {
+                    relevanceScore += 8;
+                    hasExactMatch = true;
+                }
+            });
+            
+            // Only return files with exact matches and high relevance
+            return hasExactMatch && relevanceScore >= 8;
+        }).slice(0, 3); // Limit to top 3 most relevant files
+    }
+
+    static createFileAccessKeyboard(files) {
+        return files.map(file => [{
+            text: `📁 ${file.fileName}`,
+            callback_data: `file:${file._id}`
+        }]);
     }
 
     // Year selection handler
@@ -89,7 +382,7 @@ class BotController {
                 parse_mode: 'Markdown',
                 reply_markup: branchKeyboard
             });
-            
+
             ctx.session.lastMessageId = sentMessage.message_id;
             await ctx.answerCbQuery();
         } catch (error) {
@@ -102,7 +395,7 @@ class BotController {
     static async handleBranchSelection(ctx) {
         try {
             if (ctx.session?.lastMessageId) {
-                await ctx.telegram.deleteMessage(ctx.chat.id, ctx.session.lastMessageId).catch(() => {});
+                await ctx.telegram.deleteMessage(ctx.chat.id, ctx.session.lastMessageId).catch(() => { });
             }
 
             if (!ctx.session) {
@@ -129,7 +422,7 @@ class BotController {
     static async handleCategorySelection(ctx) {
         try {
             if (ctx.session?.lastMessageId) {
-                await ctx.telegram.deleteMessage(ctx.chat.id, ctx.session.lastMessageId).catch(() => {});
+                await ctx.telegram.deleteMessage(ctx.chat.id, ctx.session.lastMessageId).catch(() => { });
             }
 
             if (!ctx.session) {
@@ -157,10 +450,10 @@ class BotController {
 
             if (files.length === 0) {
                 const category = fileCatgry === 'all' ? 'any category' : fileCatgry;
-                await ctx.reply(fileView.noFilesFoundMessage(category, yearSem, branch), { 
-                    parse_mode: 'Markdown' 
+                await ctx.reply(fileView.noFilesFoundMessage(category, yearSem, branch), {
+                    parse_mode: 'Markdown'
                 });
-                
+
                 setTimeout(async () => {
                     await ctx.reply(fileView.yearSelectionMessage(), {
                         parse_mode: 'Markdown',
@@ -192,7 +485,7 @@ class BotController {
         try {
             const fileId = ctx.match[1];
             const file = await File.findById(fileId);
-            
+
             if (!file) {
                 return ctx.reply(fileView.fileNotFoundMessage(), { parse_mode: 'Markdown' });
             }
@@ -236,7 +529,7 @@ class BotController {
         try {
             const fileId = ctx.match[1];
             const file = await File.findById(fileId);
-            
+
             if (!file) {
                 return ctx.reply(fileView.fileNotFoundMessage(), { parse_mode: 'Markdown' });
             }
@@ -285,10 +578,10 @@ class BotController {
         if (!config.BOT_OWNER) {
             return ctx.reply(userView.submitUnavailableMessage(), { parse_mode: 'Markdown' });
         }
-        
+
         const ownerUsername = config.BOT_OWNER.startsWith('@') ? config.BOT_OWNER.substring(1) : config.BOT_OWNER;
         const firstName = ctx.from.first_name;
-        
+
         ctx.reply(userView.submitMessage(firstName), {
             parse_mode: 'Markdown',
             reply_markup: userView.submitKeyboard(ownerUsername)
